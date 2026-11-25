@@ -109,6 +109,19 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 .compbar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line)}
 .compbar span{display:block;height:100%;transition:width .3s}
 .note{font-size:12.5px;color:var(--muted);margin:0}
+.grav{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.grav label{font-size:13.5px;font-weight:500}
+.gbar{position:relative;height:12px;border-radius:6px;background:var(--line);overflow:visible}
+.gfill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--ok);transition:width .15s}
+.gfill.bad{background:var(--bad)}
+.gmark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.gticks{position:relative;height:14px;font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+.gticks span{position:absolute;top:0;white-space:nowrap}
+.gticks span+span{transform:translateX(-50%)}
+.explain{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;background:var(--surface-2);padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.explain h3{font-size:16px}
+.explain p{margin:0;font-size:14px;max-width:85ch}
+.explain p+p{color:var(--muted);font-size:13.5px}
 .btn{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600}
 .btn:hover{border-color:var(--accent)}
 .btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -189,6 +202,12 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
       <div class="card stage">
         <div class="stage-head"><h2 id="stageTitle">Gaya van der Waals pada spatula cicak</h2><span id="stageSub">skala: nanometer</span></div>
         <canvas id="stage" width="900" height="600" aria-label="Visualisasi mikroskopis simulasi"></canvas>
+        <div class="explain" aria-live="polite">
+          <div class="eyebrow">Apa yang terjadi di level molekul?</div>
+          <h3 id="exTitle">—</h3>
+          <p id="exBody"></p>
+          <p id="exMore"></p>
+        </div>
         <p class="caption" id="stageCap"></p>
       </div>
       <aside class="side">
@@ -208,7 +227,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
             <div><dt>F(r) per pasangan</dt><dd id="ro_F">—</dd></div>
             <div><dt>Energi adhesi W</dt><dd id="ro_E">—</dd></div>
             <div><dt>Gaya tarik total</dt><dd id="ro_Ft">—</dd></div>
-            <div><dt>Ekstrapolasi 4 kaki</dt><dd id="ro_Fall">—</dd></div>
+            <div><dt>Adhesi total · N kontak</dt><dd id="ro_Fall">—</dd></div>
             <div><dt>Status kaki</dt><dd id="ro_status">—</dd></div>
           </dl>
           <div class="ctl">
@@ -220,6 +239,17 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
             <div class="ctl-row"><label for="thSl">Sudut tarikan θ (peeling)</label><output id="thOut" for="thSl">—</output></div>
             <input type="range" id="thSl" min="0" max="90" step="1" value="10">
             <div class="ticks"><span>0° geser</span><span>30° kritis</span><span>90° tegak</span></div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-row"><label for="nSl">Jumlah kontak spatulae N</label><output id="nOut" for="nSl">—</output></div>
+            <input type="range" id="nSl" min="0" max="9" step="0.05" value="8">
+            <div class="ticks"><span>1</span><span>10³</span><span>10⁶</span><span>10⁹</span></div>
+          </div>
+          <div class="grav">
+            <div class="ctl-row"><label>Adhesi total vs berat cicak rumah (5 g)</label><span id="gravChip" class="chip ok">—</span></div>
+            <div class="gbar"><span class="gfill" id="gFill"></span><span class="gmark" id="gMark"></span></div>
+            <div class="gticks"><span style="left:0%">1 nN</span><span style="left:30%">1 µN</span><span style="left:60%">1 mN</span><span style="left:90%">1 N</span></div>
+            <p class="note" id="gravNote">—</p>
           </div>
           <div class="ctl">
             <label>Jenis substrat</label>
@@ -306,7 +336,7 @@ const SC={bg:'#0C141B',panel:'#121E27',grid:'rgba(140,175,195,0.07)',line:'rgba(
   amber:'#F0A93B',teal:'#3FD0C9',blue:'#5CB8FF',coral:'#FF6F61',green:'#7BD88F',violet:'#B49CFF',white:'#EAF2F7'};
 
 /* ---------------- state ---------------- */
-const S={mode:'gecko', g:{r:0.8,theta:10,sub:'polar'}, t:{surf:'cassie',gamma:72,tilt:0}, ch:[false,false,false,false], quiz:[null,null,null]};
+const S={mode:'gecko', g:{r:0.8,theta:10,sub:'polar',N:8}, t:{surf:'cassie',gamma:72,tilt:0}, ch:[false,false,false,false], quiz:[null,null,null]};
 const KEY='biomim-lab-v1';
 try{ const d=JSON.parse(localStorage.getItem(KEY)||'null'); if(d){ if(Array.isArray(d.ch)) S.ch=d.ch.map(Boolean).slice(0,4); if(Array.isArray(d.quiz)) S.quiz=d.quiz.slice(0,3);} }catch(e){}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ch:S.ch,quiz:S.quiz})); }catch(e){} }
@@ -491,6 +521,12 @@ function drawGecko(t){
   for(let i=0;i<n;i++){ const r=cols[i].r; if(r<0.34){ const a=clamp((0.34-r)/0.12,0,1);
     const my=(cols[i].y+YS)/2, g=ctx.createRadialGradient(cols[i].x,my,0,cols[i].x,my,34);
     g.addColorStop(0,`rgba(255,80,70,${0.75*a})`); g.addColorStop(1,'rgba(255,80,70,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cols[i].x,my,34,0,TAU); ctx.fill(); }}
+  // glowing van der Waals attraction lines
+  let vdwLbl=false;
+  for(let i=0;i<n;i++){ const F=LJF(cols[i].r,e); if(F>=0||cols[i].r>1.3) continue; const a=clamp(-F/FA,0,1); if(a<0.03) continue;
+    ctx.save(); ctx.shadowColor='rgba(63,208,201,0.9)'; ctx.shadowBlur=12*a; ctx.strokeStyle=`rgba(63,208,201,${0.2+0.6*a})`; ctx.lineWidth=1.5+2.5*a;
+    ctx.setLineDash([2,5]); ctx.lineDashOffset=-t*20; ctx.beginPath(); ctx.moveTo(cols[i].x,cols[i].y+14); ctx.lineTo(cols[i].x,YS-14); ctx.stroke(); ctx.restore();
+    if(!vdwLbl && i>=3 && a>0.15 && YS-cols[i].y>70){ vdwLbl=true; label(ctx,'gaya van der Waals',cols[i].x-8,(cols[i].y+YS)/2,{font:'600 11px '+MONO,col:'#9FF0EC',bg:'rgba(12,20,27,0.75)',align:'right'}); } }
   // δ labels on selected columns
   for(const i of [1,4,6]){ deltaLabels(ctx,cols[i].x,cols[i].y,dS[i],24); deltaLabels(ctx,cols[i].x,YS,dB[i],24); }
   // force arrows
@@ -628,6 +664,7 @@ function updateTaro(dt){
 // water molecules for molecular panel
 const WM=[];
 for(let row=0;row<3;row++) for(let c=0;c<6;c++){ WM.push({bx:494+c*68+(row%2)*34, by:424+row*42, ph:Math.random()*TAU, phi:Math.random()*TAU, tgt:null, timer:Math.random()*1.5, x:0,y:0}); }
+let lastSurfB=0;
 const SURF_O=Array.from({length:11},(_,i)=>({x:470+i*41,y:568}));
 function updateWM(dt,glass,t){
   for(const m of WM){ m.x=m.bx+5*Math.sin(t*1.3+m.ph); m.y=m.by+4*Math.sin(t*1.7+m.ph*1.3); }
@@ -677,6 +714,10 @@ function drawTaro(t,dt){
   const wg=ctx.createLinearGradient(s-sh.extL,-h,s+sh.extR,0); wg.addColorStop(0,'rgba(140,205,255,0.55)'); wg.addColorStop(1,'rgba(40,120,210,0.45)');
   ctx.fillStyle=wg; ctx.fill(); ctx.strokeStyle='rgba(200,235,255,0.9)'; ctx.lineWidth=1.6/z; ctx.stroke();
   ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(s-Math.min(sh.extL,h)*0.35,-h*0.72,Math.max(3,Math.min(sh.extL,h)*0.16),Math.max(2,h*0.09),-0.5,0,TAU); ctx.fill();
+  // cohesion: surface molecules pulled inward
+  if(h>40 && sp>0.95){ const cy=-h*0.5, ry=h*0.5, rxx=Math.min(sh.extL,sh.extR)*0.92;
+    for(const deg of [-160,-125,-90,-55,-20]){ const a=deg*D2R, px=s+Math.cos(a)*rxx, py=cy+Math.sin(a)*ry, ix=s+Math.cos(a)*rxx*0.62, iy=cy+Math.sin(a)*ry*0.62;
+      arrow(ctx,px,py,ix,iy,'rgba(220,240,255,0.75)',1.4/z,6/z); } }
   // attached dust riding on drop
   const Rm=Math.max(8,(h<sh.extL? h*0.8 : sh.extL*0.85));
   for(const p of dust){ if(p.att!==drop.id||p.gone) continue; const a=p.ang+drop.roll; ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(s+Math.cos(a)*Rm*0.8,-h/2+Math.sin(a)*Math.min(Rm,h/2)*0.8,p.r,0,TAU); ctx.fill(); }
@@ -824,8 +865,9 @@ function drawMolecular(ctx,st,t){
   if(glass){ for(const s of SURF_O){ let best=null,bd=60; for(const m of WM){ const d=Math.hypot(m.x-s.hx,m.y-s.hy); if(d<bd){bd=d;best=m;} } if(best){ ctx.beginPath(); ctx.moveTo(s.hx,s.hy); ctx.lineTo(best.x,best.y+8); ctx.stroke(); surfB++; } } }
   ctx.setLineDash([]);
   label(ctx,'MOLEKUL · H₂O di antarmuka',X0+10,Y0+16,{font:'600 11px '+MONO,col:SC.mute});
-  label(ctx,glass?`ikatan H air–Si–OH: ${surfB}`:`ikatan H air–lilin: 0 (tanpa gugus polar)`,X0+W-10,Y0+16,{font:'600 11px '+MONO,col:glass?SC.blue:SC.coral,align:'right'});
-  label(ctx,'- - ikatan hidrogen',X0+10,Y0+34,{font:'10px '+MONO,col:SC.blue});
+  lastSurfB=surfB;
+  label(ctx,glass?`adhesi kuat: ${surfB} ikatan H air–Si–OH`:`adhesi lemah: 0 ikatan H air–lilin`,X0+W-10,Y0+16,{font:'600 11px '+MONO,col:glass?SC.blue:SC.coral,align:'right'});
+  label(ctx,'- - kohesi: ikatan hidrogen antar-air',X0+10,Y0+34,{font:'10px '+MONO,col:SC.blue});
   if(ns>0) label(ctx,`surfaktan teradsorpsi: ${ns}`,X0+W-10,Y0+34,{font:'10px '+MONO,col:SC.amber,align:'right'});
   ctx.restore();
 }
@@ -857,6 +899,7 @@ function drawGraphTaro(){
    ================================================================= */
 const rSl=$('#rSl'), thSl=$('#thSl'), gSl=$('#gSl'), aSl=$('#aSl');
 function syncInputs(){
+  $('#nSl').value=S.g.N; $('#nOut').textContent='N = '+sci(Math.pow(10,S.g.N)).replace(/<[^>]+>/g,'');
   rSl.value=S.g.r; thSl.value=S.g.theta; gSl.value=S.t.gamma; aSl.value=S.t.tilt;
   $('#rOut').textContent=fmt(S.g.r,3)+' nm'; $('#thOut').textContent=Math.round(S.g.theta)+'°';
   $('#gOut').textContent=fmt(S.t.gamma,1)+' mN/m'; $('#aOut').textContent=fmt(S.t.tilt,1)+'°';
@@ -865,6 +908,7 @@ function syncInputs(){
 }
 rSl.addEventListener('input',()=>{S.g.r=+rSl.value; syncInputs();});
 thSl.addEventListener('input',()=>{S.g.theta=+thSl.value; syncInputs();});
+$('#nSl').addEventListener('input',e=>{S.g.N=+e.target.value; syncInputs();});
 gSl.addEventListener('input',()=>{S.t.gamma=+gSl.value; syncInputs();});
 aSl.addEventListener('input',()=>{S.t.tilt=+aSl.value; syncInputs();});
 document.querySelectorAll('#subSeg button').forEach(b=>b.addEventListener('click',()=>{S.g.sub=b.dataset.sub; syncInputs();}));
@@ -905,12 +949,23 @@ function readGecko(){
   setText('ro_V',fmt(G.V,2)+' <small>meV</small>'); setText('ro_F',fmt(G.F,2)+' <small>pN</small>');
   setText('ro_E',(G.Ead<-9999?'< −9999':fmt(G.Ead,2))+' <small>mJ/m²</small>');
   setText('ro_Ft',fmt(G.Fseta,2)+' <small>µN</small>');
-  setText('ro_Fall',fmt(G.Fseta*6.5,1)+' <small>N (6,5 juta seta)</small>');
+  const GV=gravity(G);
+  setText('ro_Fall',fmtForce(GV.F));
   setText('ro_status',`<span class="chip ${G.status.c}">${G.status.t}</span>`);
+  const pos=F=>clamp((Math.log10(Math.max(F,1e-12))+9)/10,0,1)*100;
+  $('#gFill').style.width=pos(GV.F)+'%'; $('#gFill').classList.toggle('bad',!GV.stick); $('#gMark').style.left=pos(W_GECKO)+'%';
+  const chip=$('#gravChip'); chip.className='chip '+(GV.stick?'ok':'bad');
+  setText('gravChip',GV.stick?`Menempel · ${GV.ratio>=100?'≥100':fmt(GV.ratio,GV.ratio<10?1:0)}× berat`:'Jatuh');
+  setText('gravNote',`Satu kontak menahan ${fmtForce(G.Fsp*1e-9*peel(S.g.theta))}. Berat cicak ${fmt(W_GECKO*1000,0)} mN (garis hitam) butuh ≥ `+(isFinite(GV.Nreq)?sci(GV.Nreq):'∞')+' kontak pada r dan θ ini.');
   const sb=SUBS[S.g.sub], tot=sb.Ad+sb.Ap, pl=sb.Ad/tot*100;
   $('#compL').style.width=pl+'%'; $('#compP').style.width=(100-pl)+'%';
   setText('compOut',`London ${fmt(pl,0)}% · dipol ${fmt(100-pl,0)}%`);
 }
+const W_GECKO=0.005*9.81; // N, cicak rumah ±5 g
+const SUP={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+function sci(x){ if(!isFinite(x)) return '∞'; if(x<1000) return String(Math.round(x)); const e=Math.floor(Math.log10(x)); const m=x/Math.pow(10,e); return fmt(m,1)+'×10'+String(e).split('').map(c=>SUP[c]).join(''); }
+function fmtForce(F){ if(!(F>0)) return '0 <small>N</small>'; if(F>=1) return fmt(F,2)+' <small>N</small>'; if(F>=1e-3) return fmt(F*1e3,2)+' <small>mN</small>'; if(F>=1e-6) return fmt(F*1e6,2)+' <small>µN</small>'; return fmt(F*1e9,2)+' <small>nN</small>'; }
+function gravity(G){ const per=G.Fsp*1e-9*peel(S.g.theta), N=Math.pow(10,S.g.N), F=N*per; return {F,N,ratio:F/W_GECKO,stick:F>=W_GECKO,Nreq:per>0?W_GECKO/per:Infinity}; }
 function readTaro(){
   const st=TS;
   setText('ro_th',fmt(st.th,1)+'°'); setText('ro_state',st.state);
@@ -1027,6 +1082,49 @@ function renderQuiz(){
 }
 $('#quizRetry').addEventListener('click',()=>{ S.quiz=[null,null,null]; save(); renderQuiz(); renderProgress(); });
 
+/* ---------------- dynamic explanation ---------------- */
+function explainGecko(){
+  const r=S.g.r, th=S.g.theta, G=gecko(r,th,S.g.sub), GV=gravity(G), polar=S.g.sub==='polar';
+  let title, body;
+  if(r<0.33){ title='Tolakan Pauli mendominasi';
+    body=`Awan elektron spatula dan substrat mulai tumpang-tindih. Prinsip larangan Pauli melarang elektron menempati keadaan yang sama, jadi energi naik sangat tajam (∝ 1/r¹²) dan spatula terdorong menjauh: F = +${fmt(G.F,1)} pN per pasangan atom.`; }
+  else if(r<=0.40){ title='Kesetimbangan di dasar sumur potensial';
+    body=`Tarikan dispersi dan tolakan Pauli hampir seimbang (F = ${fmt(G.F,2)} pN, V ≈ −ε). Dipol sesaat di keratin sangat kuat menginduksi dipol searah pada atom substrat, sehingga fluktuasi keduanya bergerak serempak. Inilah jarak kontak efektif spatula.`; }
+  else if(r<=1.2){ title='Gaya dispersi London menarik spatula';
+    body=`Elektron di keratin terus berfluktuasi membentuk dipol sesaat δ+/δ−. Dipol ini menginduksi dipol pada permukaan, dan pasangan dipol yang terkorelasi saling menarik. Tarikannya melemah cepat (∝ 1/r⁶): pada r = ${fmt(r,2)} nm hanya ${fmt(-G.F,2)} pN per pasangan.`; }
+  else { title='Terlalu jauh: dipol tidak lagi terkorelasi';
+    body=`Pada r = ${fmt(r,2)} nm fluktuasi elektron spatula hampir tidak memengaruhi substrat, |V| < 1% dari ε. Karena itu spatula harus tipis dan lentur agar bisa merapat hingga ±0,4 nm bahkan pada dinding yang kasar.`; }
+  let more=polar?'Kaca: gugus Si–OH menambah sedikit gaya dipol permanen (Keesom/Debye), tetapi sebagian besar adhesi tetap berasal dari dispersi London. ':'PTFE: tidak ada dipol permanen neto, tetapi dispersi London tetap bekerja karena semua atom punya awan elektron, hanya lebih lemah (polarisabilitas F rendah). ';
+  if(th>30) more+=`Sudut tarikan ${Math.round(th)}° memusatkan tegangan di tepi kontak sehingga spatulae terkelupas satu per satu. `;
+  more+=`Dengan N = ${sci(GV.N)} kontak, adhesi total ${fmtForce(GV.F).replace(/<[^>]+>/g,'')} ${GV.stick?'melebihi':'lebih kecil dari'} berat cicak ${fmt(W_GECKO*1000,0)} mN, jadi cicak ${GV.stick?'menempel':'jatuh'}.`;
+  return {title,body,more};
+}
+function explainTaro(){
+  const st=TS, g=S.t.gamma, surf=S.t.surf;
+  let title, body, more='';
+  if(surf==='cassie' && !st.collapsed){ title='Cassie–Baxter: tetes duduk di atas kantong udara';
+    body=`Kohesi: setiap molekul air membentuk ikatan hidrogen dengan tetangganya, dan molekul di permukaan tetes tertarik ke dalam (panah putih), sehingga tetes membulat (γLV = ${fmt(g,0)} mN/m). Adhesi: lilin nonpolar tidak bisa membentuk ikatan H, hanya dispersi lemah, dan air hanya menyentuh ±12% ujung papila. Sisanya udara, sehingga θc = ${fmt(st.th,0)}°.`;
+    if(g<71) more=`Surfaktan menurunkan γLV: meniskus di antara papila makin melengkung ke bawah (θY lilin = ${fmt(st.thY,0)}°). Bila θY < 90°, kantong udara runtuh. `; }
+  else if(st.collapsed||surf==='wenzel'){ title=st.collapsed?'Kantong udara runtuh: Cassie berubah menjadi Wenzel':'Wenzel: air mengisi celah antar-papila';
+    body=`Air masuk ke celah papila sehingga luas kontak padat–cair naik ${'±1,8'}× dan kantong udara hilang. Garis kontak tersangkut di tepi kekasaran (pinning) dengan histeresis ${fmt(st.thA-st.thR,0)}°, jadi tetes tetap diam meski daun dimiringkan.`;
+    if(st.collapsed) body=`Surfaktan menurunkan γLV hingga θY lilin = ${fmt(st.thY,0)}° (< 90°). `+body; }
+  else if(surf==='smooth'){ title='Lilin halus: hidrofobik, tetapi tidak super';
+    body=`Tanpa kekasaran, θc sama dengan sudut Young (${fmt(st.th,0)}°). Kohesi antar-air masih lebih kuat daripada adhesi air–lilin, tetapi tanpa kantong udara tetes meluncur (tidak menggelinding) pada α > ${isFinite(st.alphaC)?fmt(st.alphaC,0)+'°':'90°'} dan hanya sedikit debu yang terbawa.`; }
+  else { title='Kaca: adhesi mengalahkan kohesi';
+    body=`Gugus Si–OH di permukaan kaca membentuk ikatan hidrogen dengan air (${lastSurfB} ikatan terlihat di panel molekul). Tarikan air ke permukaan lebih besar daripada tarikan antar-air, sehingga tetes menyebar dan membasahi kaca (θc = ${fmt(st.th,0)}°).`; }
+  if(st.pinned) more+='Tetes terjebak: debu tidak bisa disapu.';
+  else if(drop.moving) more+=st.state==='Cassie–Baxter'?'Tetes menggelinding dan mengangkat debu, karena debu lebih kuat menempel pada antarmuka air–udara daripada pada ujung kristal lilin (efek self-cleaning).':'Tetes meluncur tetapi sebagian besar debu tertinggal.';
+  else if(S.t.tilt>0) more+=`Kemiringan ${fmt(S.t.tilt,1)}° belum melampaui sudut luncur ${isFinite(st.alphaC)?fmt(st.alphaC,1)+'°':''}.`;
+  else more+='Miringkan daun untuk melihat tetes bergerak.';
+  return {title,body,more};
+}
+let exTick=0;
+function updateExplain(){
+  if(S.mode==='quiz') return;
+  const x=S.mode==='gecko'?explainGecko():explainTaro();
+  setText('exTitle',x.title); setText('exBody',x.body); setText('exMore',x.more);
+}
+
 /* ---------------- loop ---------------- */
 let last=performance.now();
 function frame(ts){
@@ -1034,6 +1132,7 @@ function frame(ts){
   if(S.mode==='gecko'){ rDisp+=(S.g.r-rDisp)*Math.min(1,dt*12); drawGecko(t); drawGraphGecko(); readGecko(); }
   else if(S.mode==='taro'){ updateTaro(dt); drawTaro(t,dt); drawGraphTaro(); readTaro(); }
   checkChallenges();
+  if(++exTick%10===1) updateExplain();
   requestAnimationFrame(frame);
 }
 syncInputs(); setMode('gecko'); renderQuiz(); renderProgress();

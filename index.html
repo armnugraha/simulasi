@@ -1,0 +1,476 @@
+<title>Cicak dan Daun Talas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: header + mode tabs → [stage canvas + controls | sticky explanation & label key] */
+:root{
+  --bg:#EEF3F1; --surface:#FFFFFF; --surface-2:#F4F8F6; --ink:#122420; --muted:#577069; --line:#D3E0DB;
+  --accent:#0D7A6C; --accent-ink:#FFFFFF; --gecko:#B5651D; --water:#1F78C8;
+  --ok:#1A8A4A; --ok-bg:#E1F4E8; --bad:#C0392B; --bad-bg:#FBE6E3;
+  --font-body:"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1311; --surface:#121D1A; --surface-2:#162420; --ink:#E0ECE8; --muted:#8AA39C; --line:#22342F;
+    --accent:#3CC4B0; --accent-ink:#052520; --gecko:#E79D55; --water:#5BB0F2;
+    --ok:#5BCB88; --ok-bg:#13301F; --bad:#F07B6E; --bad-bg:#3A1B18; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1311; --surface:#121D1A; --surface-2:#162420; --ink:#E0ECE8; --muted:#8AA39C; --line:#22342F;
+  --accent:#3CC4B0; --accent-ink:#052520; --gecko:#E79D55; --water:#5BB0F2;
+  --ok:#5BCB88; --ok-bg:#13301F; --bad:#F07B6E; --bad-bg:#3A1B18; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.55}
+h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px 24px;padding-block:16px 4px}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(22px,2.6vw,30px);font-weight:800;letter-spacing:-.01em}
+.head p{margin:4px 0 0;color:var(--muted);font-size:14px;max-width:62ch}
+.tabs{display:flex;gap:6px;padding-block:10px 0;overflow-x:auto}
+.tab{border:none;background:none;padding:10px 16px 12px;border-bottom:3px solid transparent;font-weight:700;color:var(--muted);white-space:nowrap}
+.tab span{font-family:var(--font-mono);font-weight:600;font-size:11px;margin-right:8px}
+.tab[aria-selected="true"]{color:var(--ink)}
+#tab1[aria-selected="true"]{border-color:var(--gecko)} #tab2[aria-selected="true"]{border-color:var(--water)}
+main{padding-block:18px 40px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:16px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.stage{padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+canvas{display:block;width:100%;max-width:100%;aspect-ratio:900/560;border-radius:10px;background:#0B1416;touch-action:pan-y}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ctl-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctl label,.ctl .lab{font-size:14px;font-weight:600}
+output,.num{font-family:var(--font-mono);font-size:13.5px;font-variant-numeric:tabular-nums}
+.ticks{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px 10px;text-align:left;line-height:1.3}
+.seg button b{display:block;font-size:14px} .seg button small{color:var(--muted);font-size:12px}
+.seg button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px 14px;font-weight:600;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.meter{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);grid-column:1/-1}
+.mrow{display:grid;grid-template-columns:150px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:13.5px}
+@media (max-width:520px){.mrow{grid-template-columns:1fr 80px}.mrow .bar{grid-column:1/-1;grid-row:2}}
+.bar{height:14px;border-radius:7px;background:var(--line);position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;transition:width .15s}
+.mrow .num{text-align:right}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.mhead .lab{font-weight:700;font-size:14px}
+.chip{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.bad{background:var(--bad-bg);color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;grid-column:1/-1}
+.stats div{background:var(--surface-2);padding:8px 10px}
+.stats dt{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.stats dd{margin:2px 0 0;font-family:var(--font-mono);font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+aside{display:flex;flex-direction:column;gap:16px;min-width:0;position:sticky;top:16px}
+@media (max-width:980px){aside{position:static}}
+.explain{padding:16px;display:flex;flex-direction:column;gap:8px;border-top:4px solid var(--accent)}
+.explain h2{font-size:18px;font-weight:800}
+.explain p{margin:0;font-size:14.5px}
+.explain .more{color:var(--muted);font-size:13.5px}
+.explain .formula{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.key{padding:16px;display:flex;flex-direction:column;gap:10px}
+.key h3{font-size:14px;font-weight:700}
+.key ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.key li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start}
+.sw{width:18px;height:18px;border-radius:50%;margin-top:2px}
+.sw.line{height:4px;border-radius:2px;margin-top:9px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <div class="eyebrow">Simulasi edukasi · gaya antarmolekul di alam</div>
+        <h1>Cicak dan Daun Talas</h1>
+        <p>Lihat bagaimana gaya yang sangat lemah antara molekul membuat cicak menempel di dinding, dan mengapa air menggelinding di atas daun talas.</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Mode">
+      <button class="tab" role="tab" id="tab1" data-mode="1" aria-selected="true"><span>MODE 1</span>Kaki Cicak &amp; Dinding</button>
+      <button class="tab" role="tab" id="tab2" data-mode="2" aria-selected="false"><span>MODE 2</span>Air pada Daun Talas</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card stage" aria-label="Simulasi">
+      <canvas id="cv" width="900" height="560" aria-label="Visualisasi simulasi"></canvas>
+
+      <div class="controls" id="ctl1">
+        <div class="ctl">
+          <div class="ctl-row"><label for="dSl">Jarak spatula ke dinding</label><output id="dOut">—</output></div>
+          <input type="range" id="dSl" min="0.2" max="3" step="0.01" value="2">
+          <div class="ticks"><span>0,2 nm (rapat)</span><span>3 nm (jauh)</span></div>
+          <p class="note">Bisa juga seret ujung kaki di layar ke atas/bawah.</p>
+        </div>
+        <div class="ctl">
+          <div class="ctl-row"><label for="nSl">Jumlah kontak spatulae</label><output id="nOut">—</output></div>
+          <input type="range" id="nSl" min="0" max="9" step="0.1" value="8">
+          <div class="ticks"><span>1</span><span>1 ribu</span><span>1 juta</span><span>1 miliar</span></div>
+        </div>
+        <div class="meter">
+          <div class="mhead"><span class="lab">Kekuatan adhesi total vs gaya gravitasi</span><span class="chip ok" id="stick">—</span></div>
+          <div class="mrow"><span>Adhesi total (tarik ke dinding)</span><div class="bar"><i id="bA" style="background:var(--accent)"></i></div><span class="num" id="vA">—</span></div>
+          <div class="mrow"><span>Berat cicak (5 g)</span><div class="bar"><i id="bW" style="background:var(--gecko)"></i></div><span class="num" id="vW">—</span></div>
+          <p class="note">Skala logaritmik dari 1 nN sampai 1 N. Satu kontak spatula hanya beberapa nanonewton.</p>
+        </div>
+      </div>
+
+      <div class="controls" id="ctl2" hidden>
+        <div class="ctl">
+          <span class="lab">Permukaan</span>
+          <div class="seg">
+            <button type="button" id="sTaro" aria-pressed="true"><b>Daun talas</b><small>hidrofobik · papila + lilin</small></button>
+            <button type="button" id="sGlass" aria-pressed="false"><b>Kaca biasa</b><small>hidrofilik · gugus –OH</small></button>
+          </div>
+        </div>
+        <div class="ctl">
+          <div class="ctl-row"><label for="tSl">Kemiringan daun</label><output id="tOut">—</output></div>
+          <input type="range" id="tSl" min="0" max="45" step="1" value="0">
+          <div class="ticks"><span>0° datar</span><span>45°</span></div>
+        </div>
+        <div class="btns"><button class="btn" type="button" id="newDrop">Teteskan air baru</button><button class="btn" type="button" id="newDust">Taburkan debu</button></div>
+        <dl class="stats">
+          <div><dt>Ikatan hidrogen antar-air</dt><dd id="sHB">—</dd></div>
+          <div><dt>Molekul menyentuh permukaan</dt><dd id="sTouch">—</dd></div>
+          <div><dt>Debu tersapu</dt><dd id="sDust">—</dd></div>
+          <div><dt>Keadaan tetes</dt><dd id="sState" style="font-size:14px">—</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card explain" aria-live="polite">
+        <div class="eyebrow">Yang sedang terjadi</div>
+        <h2 id="exT">—</h2>
+        <p id="exB"></p>
+        <p class="more" id="exM"></p>
+        <div class="formula" id="exF"></div>
+      </div>
+      <div class="card key">
+        <h3>Keterangan warna</h3>
+        <ul id="key"></ul>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const TAU=Math.PI*2, D2R=Math.PI/180;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt=(x,d=2)=>(x<0?'−':'')+Math.abs(x).toFixed(d).replace('.',',');
+const MONO='"JetBrains Mono", Consolas, monospace', SANS='"Plus Jakarta Sans", "Segoe UI", sans-serif';
+const C={bg:'#0B1416',panel:'#111E21',grid:'rgba(150,190,190,0.07)',line:'rgba(170,200,200,0.22)',text:'#D3E2DF',mute:'#82A09A',
+  teal:'#3FE0C8',amber:'#F2A649',coral:'#FF6B5E',blue:'#62BBFF',white:'#EEF6F4',green:'#6FD08C'};
+
+const cv=$('#cv'), ctx=cv.getContext('2d'); let SC=1, OK=false;
+function fit(){ const w=cv.clientWidth; if(!w){OK=false;return;} const dpr=Math.min(2,devicePixelRatio||1); cv.width=Math.round(w*dpr); cv.height=Math.round(w*560/900*dpr); SC=cv.width/900; OK=true; }
+new ResizeObserver(fit).observe(cv); fit();
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function arrow(x1,y1,x2,y2,col,lw=2,hs=7){ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();const a=Math.atan2(y2-y1,x2-x1);ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-hs*Math.cos(a-0.45),y2-hs*Math.sin(a-0.45));ctx.lineTo(x2-hs*Math.cos(a+0.45),y2-hs*Math.sin(a+0.45));ctx.closePath();ctx.fill();}
+function txt(s,x,y,{font='12px '+MONO,col=C.text,bg=null,align='left'}={}){ctx.font=font;ctx.textAlign=align;ctx.textBaseline='middle';
+  if(bg){const w=ctx.measureText(s).width,x0=align==='center'?x-w/2:align==='right'?x-w:x;ctx.fillStyle=bg;rr(x0-5,y-10,w+10,20,5);ctx.fill();}
+  ctx.fillStyle=col;ctx.fillText(s,x,y);ctx.textAlign='left';}
+function tag(s,x,y,tx,ty,col){ // label with leader line
+  ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(tx,ty);ctx.stroke();
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(tx,ty,2.5,0,TAU);ctx.fill();
+  txt(s,x,y,{font:'600 12px '+SANS,col:'#0B1416',bg:col,align:x<tx?'right':'left'});
+}
+function panel(x,y,w,h,title){ctx.fillStyle=C.panel;rr(x,y,w,h,10);ctx.fill();ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.stroke();txt(title,x+10,y+15,{font:'600 11px '+MONO,col:C.mute});}
+
+/* ==================== MODE 1 ==================== */
+const S={mode:1,d:2.0,logN:8,glass:false,tilt:0};
+const D0=0.30, W=0.005*9.81;                                  // nm, N
+const Fsp=d=>0.667*(1/(d*d)-Math.pow(D0,6)/Math.pow(d,8));    // nN per spatula (+ tarik, − tolak)
+const FMAX=Fsp(D0*Math.pow(4,1/6));
+function m1(){ const f=Fsp(S.d), N=Math.pow(10,S.logN), A=Math.max(0,f)*N*1e-9; return {f,N,A,stick:A>=W&&f>0,need:f>0?W/(f*1e-9):Infinity}; }
+const YW=470, PX=110, NM=9, X0=300, DX=72;
+const mk=()=>({p:[0,1,2,3].map(()=>Math.random()*TAU),w:[1.6+Math.random()*1.5,3+Math.random()*2,1.4+Math.random()*1.6,2.8+Math.random()*2]});
+const nzS=Array.from({length:NM},mk), nzW=Array.from({length:NM},mk);
+const nz=(a,t)=>[Math.sin(a.w[0]*t+a.p[0])+0.6*Math.sin(a.w[1]*t+a.p[1]),Math.sin(a.w[2]*t+a.p[2])+0.6*Math.sin(a.w[3]*t+a.p[3])];
+let dDisp=S.d, gk={y:90,v:0,wait:0};
+
+function cloud(x,y,r,d,rgb,nuc){const gx=x+d[0],gy=y+d[1],g=ctx.createRadialGradient(gx,gy,0,gx,gy,r*1.35);
+  g.addColorStop(0,`rgba(${rgb},0.9)`);g.addColorStop(0.55,`rgba(${rgb},0.38)`);g.addColorStop(1,`rgba(${rgb},0)`);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(gx,gy,r*1.35,0,TAU);ctx.fill();ctx.fillStyle=nuc;ctx.beginPath();ctx.arc(x,y,4,0,TAU);ctx.fill();}
+function deltas(x,y,d,r){const m=Math.hypot(d[0],d[1]);if(m<2.5)return;const ux=d[0]/m,uy=d[1]/m;
+  txt('δ−',x+ux*r,y+uy*r,{font:'700 12px '+SANS,col:'#DDF4FF',align:'center'});txt('δ+',x-ux*r,y-uy*r,{font:'700 12px '+SANS,col:'#FFD9D3',align:'center'});}
+
+function drawGecko(x,y,falling){ // top view of a house gecko on a wall, head up
+  ctx.save(); ctx.translate(x,y); if(falling) ctx.rotate(Math.sin(performance.now()/90)*0.25);
+  ctx.fillStyle='#C9A779'; ctx.strokeStyle='#C9A779'; ctx.lineCap='round';
+  ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(0,22); ctx.quadraticCurveTo(-10,50,6,74); ctx.stroke();
+  ctx.lineWidth=4; for(const [sx,sy,ex,ey] of [[-7,-8,-24,-20],[7,-8,24,-20],[-7,14,-24,26],[7,14,24,26]]){ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.fillStyle='#E7C894'; for(let k=-1;k<=1;k++){ctx.beginPath();ctx.arc(ex+(ex<0?-4:4)+k*2,ey+(ey<0?-3:3)+k*3,2.6,0,TAU);ctx.fill();} ctx.fillStyle='#C9A779';}
+  ctx.beginPath(); ctx.ellipse(0,4,9,22,0,0,TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0,-22,8,10,0,0,TAU); ctx.fill();
+  ctx.fillStyle='#2A2018'; ctx.beginPath(); ctx.arc(-4,-25,1.6,0,TAU); ctx.arc(4,-25,1.6,0,TAU); ctx.fill();
+  ctx.restore();
+}
+function drawM1(t,dt){
+  const R=m1();
+  ctx.setTransform(SC,0,0,SC,0,0); ctx.fillStyle=C.bg; ctx.fillRect(0,0,900,560);
+  // macro: gecko on wall
+  panel(12,12,226,188,'1 · MAKRO: CICAK DI DINDING');
+  ctx.fillStyle='#3A4A4C'; ctx.fillRect(22,30,206,162);
+  ctx.strokeStyle='rgba(255,255,255,0.05)'; for(let y=36;y<192;y+=14){ctx.beginPath();ctx.moveTo(22,y);ctx.lineTo(228,y);ctx.stroke();}
+  if(R.stick){ gk.v=0; gk.wait=0; } else { if(gk.wait>0){gk.wait-=dt;} else { gk.v+=dt*600; gk.y+=gk.v*dt; if(gk.y>230){gk.y=60;gk.v=0;gk.wait=0.6;} } }
+  ctx.save(); ctx.beginPath(); ctx.rect(22,30,206,162); ctx.clip(); drawGecko(125,gk.y,!R.stick && gk.wait<=0); ctx.restore();
+  txt(R.stick?'menempel':'jatuh!',220,182,{font:'700 12px '+SANS,col:R.stick?C.green:C.coral,align:'right',bg:'rgba(11,20,22,0.8)'});
+  ctx.setLineDash([2,4]); ctx.strokeStyle='rgba(242,166,73,0.5)'; ctx.beginPath(); ctx.moveTo(110,150); ctx.lineTo(30,224); ctx.moveTo(140,150); ctx.lineTo(220,224); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle=C.amber; ctx.setLineDash([3,3]); ctx.strokeRect(146,108,22,22); ctx.setLineDash([]);
+  // setae
+  panel(12,208,226,168,'2 · SETAE (rambut halus, ~0,1 mm)');
+  ctx.fillStyle='#7A5A36'; ctx.fillRect(22,228,206,10); ctx.fillStyle='#3A4A4C'; ctx.fillRect(22,356,206,8);
+  const lift=R.stick?0:clamp((S.d-0.4)*6,0,16);
+  for(let k=0;k<7;k++){const bx=34+k*28,tx=bx+16,ty=350-lift; ctx.strokeStyle='#D2A468'; ctx.lineWidth=2.6; ctx.beginPath(); ctx.moveTo(bx,238); ctx.quadraticCurveTo(bx+2,300,tx,ty-12); ctx.stroke();
+    ctx.lineWidth=1; for(let b=-2;b<=2;b++){ctx.beginPath();ctx.moveTo(tx,ty-12);ctx.lineTo(tx+b*4,ty);ctx.stroke();}}
+  tag('Setae',200,262,174,300,C.amber);
+  ctx.strokeStyle=C.amber; ctx.setLineDash([3,3]); ctx.strokeRect(112,326,30,30); ctx.setLineDash([]);
+  ctx.setLineDash([2,4]); ctx.strokeStyle='rgba(242,166,73,0.5)'; ctx.beginPath(); ctx.moveTo(112,356); ctx.lineTo(30,400); ctx.moveTo(142,356); ctx.lineTo(220,400); ctx.stroke(); ctx.setLineDash([]);
+  // spatulae
+  panel(12,384,226,164,'3 · SPATULAE (ujung ~200 nm)');
+  ctx.fillStyle='#3A4A4C'; ctx.fillRect(22,530,206,8);
+  ctx.strokeStyle='#D2A468'; ctx.lineWidth=3.5; ctx.beginPath(); ctx.moveTo(125,404); ctx.lineTo(125,440); ctx.stroke();
+  for(let k=0;k<7;k++){const ex=36+k*30, ey=522-lift*0.8; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(125,440); ctx.quadraticCurveTo(ex,460,ex,ey-6); ctx.stroke();
+    ctx.fillStyle='#E7C08A'; ctx.beginPath(); ctx.moveTo(ex,ey-7); ctx.lineTo(ex-10,ey+6); ctx.lineTo(ex+10,ey+6); ctx.closePath(); ctx.fill();}
+  tag('Spatulae',210,430,186,512,C.amber);
+  ctx.strokeStyle=C.teal; ctx.setLineDash([3,3]); ctx.strokeRect(111,506,30,26); ctx.setLineDash([]);
+  ctx.setLineDash([2,4]); ctx.strokeStyle='rgba(63,224,200,0.45)'; ctx.beginPath(); ctx.moveTo(141,506); ctx.lineTo(250,14); ctx.moveTo(141,532); ctx.lineTo(250,546); ctx.stroke(); ctx.setLineDash([]);
+
+  // micro view
+  ctx.save(); ctx.beginPath(); ctx.rect(250,0,650,560); ctx.clip();
+  ctx.strokeStyle=C.grid; for(let x=262;x<900;x+=36){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,560);ctx.stroke();}
+  const A=RM?2.5:6.5, tm=RM?0.35:1, ys=YW-dDisp*PX;
+  const dS=[],dW=[], c=clamp(Math.pow(0.4/dDisp,3),0,1)*0.88;
+  for(let i=0;i<NM;i++){const a=nz(nzS[i],t*tm),b=nz(nzW[i],t*tm); const s=[a[0]*A*0.7,a[1]*A]; dS.push(s); dW.push([(1-c)*b[0]*A*0.7+c*s[0],(1-c)*b[1]*A+c*s[1]]);}
+  // wall
+  const wg=ctx.createLinearGradient(0,YW,0,560); wg.addColorStop(0,'#33403F'); wg.addColorStop(1,'#151D1E'); ctx.fillStyle=wg; ctx.fillRect(250,YW+14,650,100);
+  for(let i=0;i<NM;i++){ const x=X0+i*DX; ctx.fillStyle='#6E7C7B'; ctx.beginPath(); ctx.arc(x+DX/2,YW+56,11,0,TAU); ctx.fill();
+    ctx.strokeStyle='rgba(200,210,210,0.25)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,YW); ctx.lineTo(x+DX/2,YW+56); ctx.lineTo(x+DX,YW); ctx.stroke(); }
+  for(let i=0;i<NM;i++) cloud(X0+i*DX,YW,22,dW[i],'120,205,255','#E4F5FF');
+  // spatula pad
+  const pg=ctx.createLinearGradient(0,ys-330,0,ys); pg.addColorStop(0,'#2C2014'); pg.addColorStop(1,'#6E4E2C');
+  ctx.fillStyle=pg; rr(X0-46,ys-350,(NM-1)*DX+92,334,22); ctx.fill();
+  ctx.strokeStyle='rgba(240,190,120,0.12)'; for(let k=1;k<7;k++){ctx.beginPath();ctx.moveTo(X0-40,ys-18-k*34);ctx.lineTo(X0+(NM-1)*DX+40,ys-18-k*34);ctx.stroke();}
+  for(let i=0;i<NM;i++) cloud(X0+i*DX,ys,22,dS[i],'255,190,110','#FFF0DA');
+  // forces
+  const f=Fsp(dDisp);
+  if(f>0){ const a=clamp(f/FMAX,0,1);
+    if(a>0.02){ ctx.save(); ctx.shadowColor='rgba(63,224,200,0.95)'; ctx.shadowBlur=14*a; ctx.lineWidth=1.5+3*a; ctx.setLineDash([3,5]); ctx.lineDashOffset=-t*24;
+      for(let i=0;i<NM;i++){ ctx.strokeStyle=`rgba(63,224,200,${0.2+0.7*a})`; ctx.beginPath(); ctx.moveTo(X0+i*DX,ys+16); ctx.lineTo(X0+i*DX,YW-16); ctx.stroke();
+        if(i<NM-1 && a>0.25){ ctx.strokeStyle=`rgba(63,224,200,${0.25*a})`; ctx.beginPath(); ctx.moveTo(X0+i*DX+10,ys+14); ctx.lineTo(X0+(i+1)*DX-10,YW-14); ctx.stroke(); } }
+      ctx.restore(); }
+    if(a>0.1) tag('Gaya Van der Waals',X0+4*DX+40,ys-62,X0+4*DX+DX/2,(ys+YW)/2,C.teal);
+  } else { for(let i=0;i<NM;i++){ const my=(ys+YW)/2, g=ctx.createRadialGradient(X0+i*DX,my,0,X0+i*DX,my,32); const a=clamp(-f/40,0.2,1);
+      g.addColorStop(0,`rgba(255,90,80,${0.8*a})`); g.addColorStop(1,'rgba(255,90,80,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(X0+i*DX,my,32,0,TAU); ctx.fill(); }
+    tag('Tolak-menolak: awan elektron bertumpuk',X0+5*DX,ys-70,X0+5*DX,(ys+YW)/2,C.coral); }
+  for(const i of [1,4,7]){ deltas(X0+i*DX,ys,dS[i],22); deltas(X0+i*DX,YW,dW[i],22); }
+  // ruler
+  ctx.strokeStyle=C.mute; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(264,YW); ctx.lineTo(264,YW-3*PX); ctx.stroke();
+  for(let v=0;v<=3.001;v+=0.5){const y=YW-v*PX; ctx.beginPath(); ctx.moveTo(264,y); ctx.lineTo(272,y); ctx.stroke(); if(v>0) txt(fmt(v,1),276,y,{font:'10px '+MONO,col:C.mute});}
+  txt('nm',258,YW-3*PX-14,{font:'10px '+MONO,col:C.mute});
+  // distance marker
+  const xr=878; ctx.strokeStyle=C.white; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(X0+(NM-1)*DX+24,ys); ctx.lineTo(xr+6,ys); ctx.moveTo(X0+(NM-1)*DX+24,YW); ctx.lineTo(xr+6,YW); ctx.stroke(); ctx.setLineDash([]);
+  if(YW-ys>16){ arrow(xr,(ys+YW)/2,xr,ys+1,C.white,1.3,5); arrow(xr,(ys+YW)/2,xr,YW-1,C.white,1.3,5); }
+  ctx.restore();
+  // labels
+  txt('Spatula (ujung rambut kaki cicak)',880,ys-40,{font:'600 12px '+SANS,col:'#FFD9A8',align:'right'});
+  txt('Molekul dinding',X0-30,YW+34,{font:'600 12px '+SANS,col:'#BFE6FF'});
+  ctx.fillStyle='rgba(11,20,22,0.85)'; rr(640,12,248,58,8); ctx.fill(); ctx.strokeStyle=C.line; ctx.stroke();
+  txt(`jarak = ${fmt(S.d,2)} nm`,652,30,{font:'600 14px '+MONO,col:C.white});
+  txt(f>0?`tarik ${fmt(f,2)} nN / spatula`:`tolak ${fmt(-f,1)} nN / spatula`,652,52,{font:'12px '+MONO,col:f>0?C.teal:C.coral});
+}
+
+/* ==================== MODE 2 · particle water ==================== */
+const L=880, SIG=14, RC=24, KR=0.6, KA=0.32, GAM=0.035, DT=0.5, SUB=4, G=0.035, SW=8, RW=12, PS=52;
+const PAP=[]; for(let x=24;x<L+30;x+=PS) PAP.push(x); const PR=22, PCY=4;
+let vxs=0, P=[], dustTotal=0, dustGone=0, respawn=0, hbCount=0, touchCount=0, moving=false;
+const TIP=PCY+PR-6; // water on taro rests on papilla tips (Cassie–Baxter): effective plane at tip height
+function surfW(x,y){ return S.glass?surfInfo(x,y):{dist:y-TIP-1.2*Math.cos((x-24)/PS*TAU),nx:0,ny:1}; }
+function surfInfo(x,y){ let dist=y, nx=0, ny=1;
+  if(!S.glass){ const k=Math.round((x-24)/PS); for(let j=k-1;j<=k+1;j++){ if(j<0||j>=PAP.length) continue; const cx=PAP[j], dx=x-cx, dy=y-PCY, r=Math.hypot(dx,dy), d=r-PR; if(d<dist){ dist=d; nx=dx/(r||1); ny=dy/(r||1);} } }
+  return {dist,nx,ny}; }
+function spawnDrop(){
+  P=P.filter(p=>p.t==='d');
+  const cx=130, cy=(S.glass?20:30)+78, n=100; let k=0;
+  for(let row=-8;row<=8&&k<n;row++) for(let col=-8;col<=8&&k<n;col++){ const x=cx+col*14.2+(row%2?7.1:0), y=cy+row*12.3; if(Math.hypot(x-cx,y-cy)<76){ P.push({t:'w',x,y,vx:0,vy:0,phi:Math.random()*TAU,nb:0}); k++; } }
+}
+function spawnDust(){
+  P=P.filter(p=>p.t==='w'); dustTotal=0; dustGone=0;
+  for(let i=0;i<14;i++){ const x=S.glass?250+i*42+Math.random()*10:PAP[3+i%13]+(i>=13?10:(Math.random()-0.5)*8); P.push({t:'d',x,y:S.glass?6:30,vx:0,vy:0,nb:0,r:5+Math.random()*2}); dustTotal++; }
+  settleDust();
+}
+function settleDust(){ for(const p of P) if(p.t==='d'){ for(let it=0;it<60;it++){ const s=surfInfo(p.x,p.y); if(s.dist>6){ p.y-=1; } else break; } const s=surfInfo(p.x,p.y); if(s.dist<6){ p.x+=s.nx*(6-s.dist); p.y+=s.ny*(6-s.dist);} } }
+function step(){
+  const n=P.length, a=S.tilt*D2R, gx=G*Math.sin(a), gy=-G*Math.cos(a);
+  const kw=S.glass?1.6:0.008, mu=S.glass?0.02:0.0005;
+  for(const p of P){ p.fx=gx*(p.t==='d'?2:1); p.fy=gy*(p.t==='d'?2:1); p.nb=0; p.wn=0; }
+  for(let i=0;i<n;i++){ const p=P[i]; for(let j=i+1;j<n;j++){ const q=P[j]; const dx=q.x-p.x, dy=q.y-p.y; if(dx>RC||dx<-RC||dy>RC||dy<-RC) continue; const d=Math.hypot(dx,dy); if(d>=RC||d<0.01) continue;
+      const ux=dx/d, uy=dy/d; let f=0; const ww=p.t==='w'&&q.t==='w', dd=p.t==='d'&&q.t==='d';
+      const sg=ww||dd?SIG:10;
+      if(d<sg) f=-KR*(sg-d); else if(!dd){ const ka=ww?KA:0.3; f=ka*4*(d-sg)/(RC-sg)*(1-(d-sg)/(RC-sg)); }
+      const dv=(q.vx-p.vx)*ux+(q.vy-p.vy)*uy; f+=GAM*dv;
+      p.fx+=f*ux; p.fy+=f*uy; q.fx-=f*ux; q.fy-=f*uy;
+      if(ww&&d<18){p.nb++;q.nb++;}
+      if(p.t==='d'&&q.t==='w') p.wn++; if(q.t==='d'&&p.t==='w') q.wn++; } }
+  for(const p of P){
+    const s=p.t==='w'?surfW(p.x,p.y):surfInfo(p.x,p.y), sw=p.t==='d'?p.r:SW;
+    if(s.dist<sw){ const f=KR*(sw-s.dist); p.fx+=f*s.nx; p.fy+=f*s.ny; }
+    else if(s.dist<sw+RW){ const u=(s.dist-sw)/RW, k=(p.t==='d'?0.04:kw)*4*u*(1-u); p.fx-=k*s.nx; p.fy-=k*s.ny; }
+    if(s.dist<sw+RW*0.6){ const vt=p.vx*(-s.ny)+p.vy*s.nx; const m=p.t==='d'?0.2:mu; p.vx-=m*vt*(-s.ny); p.vy-=m*vt*s.nx; }
+    const m=p.t==='d'?2:1;
+    p.vx+=p.fx/m*DT; p.vy+=p.fy/m*DT;
+    if(!RM && p.t==='w'){ p.vx+=(Math.random()-0.5)*0.09; p.vy+=(Math.random()-0.5)*0.09; }
+    if(p.t==='d' && p.wn===0 && s.dist<p.r+3){ p.vx=0; p.vy=Math.min(0,p.vy); }
+    p.vx*=0.999; p.vy*=0.999;
+    p.x+=p.vx*DT; p.y+=p.vy*DT;
+    if(p.x<8){ p.x=8; p.vx=Math.abs(p.vx)*0.3; }
+  }
+}
+function updateM2(dt){
+  const reps=clamp(Math.round(dt*60),1,3)*SUB; for(let k=0;k<reps;k++) step();
+  let gone=0; P=P.filter(p=>{ if(p.x>L+10||p.y<-60){ if(p.t==='d') gone++; return false; } return true; }); dustGone+=gone;
+  const ws=P.filter(p=>p.t==='w');
+  let vx=0; for(const p of ws) vx+=p.vx; vx/=Math.max(1,ws.length); vxs+=(vx-vxs)*0.05; moving=vxs>0.05;
+  if(ws.length<30){ if(respawn<=0) respawn=1.0; }
+  if(respawn>0){ respawn-=dt; if(respawn<=0){ respawn=0; spawnDrop(); } }
+  for(const p of ws) p.phi+=(Math.random()-0.5)*0.3;
+}
+function drawM2(){
+  ctx.setTransform(SC,0,0,SC,0,0);
+  const bg=ctx.createLinearGradient(0,0,0,560); bg.addColorStop(0,'#0E1B20'); bg.addColorStop(1,'#091113'); ctx.fillStyle=bg; ctx.fillRect(0,0,900,560);
+  const a=S.tilt*D2R, z=1-0.3*Math.sin(a)/Math.sin(45*D2R), ca=Math.cos(a), sa=Math.sin(a), PV={x:450,y:350};
+  const toS=(x,y)=>({x:PV.x+z*((x-L/2)*ca+y*sa), y:PV.y+z*((x-L/2)*sa-y*ca)});
+  ctx.save(); ctx.translate(PV.x,PV.y); ctx.rotate(a); ctx.scale(z,z); ctx.translate(-L/2,0);
+  // substrate (y up → draw at -y)
+  if(S.glass){
+    const g=ctx.createLinearGradient(0,0,0,60); g.addColorStop(0,'rgba(170,215,235,0.55)'); g.addColorStop(1,'rgba(70,110,130,0.35)'); ctx.fillStyle=g; ctx.fillRect(-20,0,L+40,60);
+    ctx.fillStyle='#E25A4F'; for(let x=6;x<L;x+=22){ ctx.beginPath(); ctx.arc(x,-1,3.2,0,TAU); ctx.fill(); }
+  } else {
+    const g=ctx.createLinearGradient(0,0,0,60); g.addColorStop(0,'#2F7D4A'); g.addColorStop(1,'#163D25'); ctx.fillStyle=g; ctx.fillRect(-20,0,L+40,60);
+    for(const x of PAP){ ctx.beginPath(); ctx.arc(x,-PCY,PR,0,TAU); const pg=ctx.createLinearGradient(0,-PCY-PR,0,0); pg.addColorStop(0,'#5BBE7A'); pg.addColorStop(1,'#2F7D4A'); ctx.fillStyle=pg; ctx.fill(); }
+    ctx.fillStyle='#2F7D4A'; ctx.fillRect(-20,0,L+40,4);
+    ctx.strokeStyle='rgba(240,250,235,0.85)'; ctx.lineWidth=1.3; // wax crystals
+    for(const x of PAP) for(let k=-6;k<=6;k++){ const th=-Math.PI/2+k*0.2; const px=x+Math.cos(th)*PR, py=-PCY+Math.sin(th)*PR; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+Math.cos(th)*5,py+Math.sin(th)*5); ctx.stroke(); }
+    ctx.fillStyle='rgba(235,245,230,0.5)'; ctx.fillRect(-20,-1.5,L+40,1.5);
+  }
+  const ws=P.filter(p=>p.t==='w');
+  // air pockets highlight (taro, under water)
+  if(!S.glass && ws.length){ ctx.fillStyle='rgba(200,235,255,0.10)';
+    for(let j=0;j<PAP.length-1;j++){ const gx=(PAP[j]+PAP[j+1])/2; const above=ws.some(p=>Math.abs(p.x-gx)<30 && p.y<70); if(above){ ctx.beginPath(); ctx.moveTo(PAP[j]+PR*0.7,-PCY-PR*0.7); ctx.quadraticCurveTo(gx,-PR*1.6,PAP[j+1]-PR*0.7,-PCY-PR*0.7); ctx.lineTo(PAP[j+1]-PR,0); ctx.lineTo(PAP[j]+PR,0); ctx.closePath(); ctx.fill(); } } }
+  // hydrogen bonds (cohesion)
+  hbCount=0; ctx.strokeStyle='rgba(120,195,255,0.55)'; ctx.lineWidth=1; ctx.setLineDash([2,3]); ctx.beginPath();
+  for(let i=0;i<ws.length;i++) for(let j=i+1;j<ws.length;j++){ const p=ws[i],q=ws[j]; const dx=q.x-p.x, dy=q.y-p.y; if(Math.abs(dx)>18||Math.abs(dy)>18) continue; if(dx*dx+dy*dy<324){ hbCount++; ctx.moveTo(p.x,-p.y); ctx.lineTo(q.x,-q.y);} }
+  ctx.stroke(); ctx.setLineDash([]);
+  // surface interaction markers
+  touchCount=0;
+  for(const p of ws){ if(surfW(p.x,p.y).dist<SW+6){ touchCount++;
+      const s=surfInfo(p.x,p.y), sx=p.x-s.nx*s.dist, sy=p.y-s.ny*s.dist;
+      if(S.glass){ ctx.strokeStyle='rgba(98,187,255,0.95)'; ctx.lineWidth=1.6; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(p.x,-p.y); ctx.lineTo(sx,-sy); ctx.stroke(); ctx.setLineDash([]); }
+      else { ctx.strokeStyle='rgba(255,120,105,0.8)'; ctx.lineWidth=1.3; ctx.beginPath(); ctx.moveTo(sx+s.nx*2,-(sy+s.ny*2)); ctx.lineTo(sx+s.nx*7,-(sy+s.ny*7)); ctx.stroke(); } } }
+  // dust
+  for(const p of P) if(p.t==='d'){ ctx.fillStyle='#9C7A50'; ctx.beginPath(); ctx.arc(p.x,-p.y,p.r,0,TAU); ctx.fill(); ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.beginPath(); ctx.arc(p.x-1.5,-p.y-1.5,p.r*0.4,0,TAU); ctx.fill(); }
+  // water molecules
+  for(const p of ws){ const x=p.x, y=-p.y, a1=p.phi-0.91, a2=p.phi+0.91;
+    ctx.fillStyle='#F2F6F8'; ctx.beginPath(); ctx.arc(x+Math.cos(a1)*6.5,y+Math.sin(a1)*6.5,3,0,TAU); ctx.arc(x+Math.cos(a2)*6.5,y+Math.sin(a2)*6.5,3,0,TAU); ctx.fill();
+    ctx.fillStyle='#E8473C'; ctx.beginPath(); ctx.arc(x,y,5.4,0,TAU); ctx.fill(); }
+  // inward pull arrows (surface tension)
+  if(ws.length>40){ let cx=0,cy=0; for(const p of ws){cx+=p.x;cy+=p.y;} cx/=ws.length; cy/=ws.length; let k=0;
+    for(const p of ws){ if(p.nb<=3 && p.y>cy-10 && (k++%3===0)){ const dx=cx-p.x, dy=cy-p.y, d=Math.hypot(dx,dy)||1; arrow(p.x+dx/d*8,-(p.y+dy/d*8),p.x+dx/d*22,-(p.y+dy/d*22),'rgba(255,255,255,0.7)',1.3,5); } } }
+  ctx.restore();
+  // ---- screen-space labels
+  if(ws.length>40){
+    let cx=0,cy=0,top=-1e9; for(const p of ws){cx+=p.x;cy+=p.y; top=Math.max(top,p.y);} cx/=ws.length; cy/=ws.length;
+    const c=toS(cx,cy); tag('Ikatan hidrogen (kohesi)',clamp(c.x+150,170,880),clamp(c.y-110,24,520),c.x+10,c.y-6,C.blue);
+    if(!S.glass){ let gj=PAP.findIndex((x,i)=>i<PAP.length-1 && Math.abs((x+PAP[i+1])/2-cx)<32); if(gj>=0){ const g=toS((PAP[gj]+PAP[gj+1])/2,8); tag('Kantong udara',clamp(g.x-40,120,860),g.y+64,g.x,g.y,'#CFEFFF'); } }
+    else { const b=toS(cx,4); tag('Adhesi kuat: ikatan H air–kaca',clamp(b.x-30,240,860),b.y+60,b.x,b.y,C.blue); }
+  }
+  if(!S.glass){ const p0=toS(PAP[11],PR+PCY-6), p1=toS(PAP[7],0); tag('Lapisan lilin (nonpolar)',clamp(p0.x+30,200,700),p0.y+70,p0.x,p0.y,'#EAF5E4'); tag('Papila',clamp(p1.x-40,90,860),p1.y+60,p1.x,p1.y+4,C.green); }
+  // legend card
+  ctx.fillStyle='rgba(9,17,19,0.86)'; rr(12,12,300,74,8); ctx.fill(); ctx.strokeStyle=C.line; ctx.lineWidth=1; ctx.stroke();
+  txt(S.glass?'Permukaan kaca (hidrofilik)':'Permukaan daun talas (hidrofobik)',24,30,{font:'700 13px '+SANS,col:S.glass?C.blue:C.green});
+  txt(`kemiringan ${S.tilt}° · debu tersapu ${dustGone}/${dustTotal}`,24,52,{font:'12px '+MONO,col:C.text});
+  txt('skala molekul diperbesar (ilustrasi)',24,72,{font:'10.5px '+MONO,col:C.mute});
+  if(respawn>0) txt('meneteskan air baru…',450,40,{font:'600 13px '+SANS,col:C.white,align:'center',bg:'rgba(9,17,19,0.8)'});
+  if(!S.glass){ ctx.fillStyle='rgba(9,17,19,0.86)'; rr(640,12,248,46,8); ctx.fill(); ctx.strokeStyle=C.line; ctx.stroke();
+    ctx.strokeStyle='rgba(255,120,105,0.9)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(654,35); ctx.lineTo(666,35); ctx.stroke();
+    txt('air–lilin: tarikan sangat lemah,',672,28,{font:'11px '+MONO,col:C.text}); txt('molekul air terdorong menjauh',672,44,{font:'11px '+MONO,col:C.text}); }
+}
+
+/* ==================== UI ==================== */
+const KEY1=[['#FFBE6E','Awan elektron molekul spatula (keratin)'],['#78CDFF','Awan elektron molekul dinding'],['line:#3FE0C8','Gaya Van der Waals (tarik-menarik)'],['#FF6B5E','Tolak-menolak saat awan elektron bertumpuk'],['text:δ+ δ−','Dipol sesaat: elektron sedang berkumpul di satu sisi']];
+const KEY2=[['#E8473C','Molekul air H₂O (O merah, H putih)'],['line:#78C3FF','Ikatan hidrogen antar-air (kohesi)'],['line:#FF7869','Interaksi air–lilin sangat lemah (tolak)'],['line:#62BBFF','Ikatan hidrogen air–kaca (adhesi kuat)'],['#5BBE7A','Papila berlapis kristal lilin'],['#9C7A50','Partikel debu']];
+function renderKey(){ const k=S.mode===1?KEY1:KEY2; $('#key').innerHTML=k.map(([c,t])=>{ if(c.startsWith('text:')) return `<li><span style="font-weight:800;font-size:12px">${c.slice(5)}</span><span>${t}</span></li>`; const line=c.startsWith('line:'); const col=line?c.slice(5):c; return `<li><span class="sw${line?' line':''}" style="background:${col}"></span><span>${t}</span></li>`; }).join(''); }
+function setMode(m){ S.mode=m; $('#tab1').setAttribute('aria-selected',String(m===1)); $('#tab2').setAttribute('aria-selected',String(m===2)); $('#ctl1').hidden=m!==1; $('#ctl2').hidden=m!==2; renderKey(); explain(); }
+$('#tab1').onclick=()=>setMode(1); $('#tab2').onclick=()=>setMode(2);
+const big=n=>n>=1e9?fmt(n/1e9,1)+' miliar':n>=1e6?fmt(n/1e6,1)+' juta':n>=1e3?fmt(n/1e3,1)+' ribu':String(Math.round(n));
+const force=F=>F>=1?fmt(F,2)+' N':F>=1e-3?fmt(F*1e3,1)+' mN':F>=1e-6?fmt(F*1e6,1)+' µN':F>0?fmt(F*1e9,1)+' nN':'0 N';
+function sync(){ $('#dSl').value=S.d; $('#nSl').value=S.logN; $('#tSl').value=S.tilt;
+  $('#dOut').textContent=fmt(S.d,2)+' nm'; $('#nOut').textContent=big(Math.pow(10,S.logN)); $('#tOut').textContent=S.tilt+'°';
+  $('#sTaro').setAttribute('aria-pressed',String(!S.glass)); $('#sGlass').setAttribute('aria-pressed',String(S.glass)); }
+$('#dSl').oninput=e=>{S.d=+e.target.value;sync();}; $('#nSl').oninput=e=>{S.logN=+e.target.value;sync();}; $('#tSl').oninput=e=>{S.tilt=+e.target.value;sync();};
+function setSurf(g){ if(S.glass===g) return; S.glass=g; sync(); spawnDust(); spawnDrop(); }
+$('#sTaro').onclick=()=>setSurf(false); $('#sGlass').onclick=()=>setSurf(true);
+$('#newDrop').onclick=()=>spawnDrop(); $('#newDust').onclick=()=>spawnDust();
+let drag=false;
+cv.addEventListener('pointerdown',e=>{ if(S.mode!==1) return; const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*900; if(x<250) return; drag=true; cv.setPointerCapture(e.pointerId); move(e); });
+function move(e){ if(!drag) return; const r=cv.getBoundingClientRect(), y=(e.clientY-r.top)/r.height*560; S.d=Math.round(clamp((YW-y)/PX,0.2,3)*100)/100; sync(); }
+cv.addEventListener('pointermove',move); cv.addEventListener('pointerup',()=>drag=false); cv.addEventListener('pointercancel',()=>drag=false);
+
+function setT(id,v){ const el=document.getElementById(id); if(el.innerHTML!==v) el.innerHTML=v; }
+function meters(){ const R=m1(), pos=F=>clamp((Math.log10(Math.max(F,1e-12))+9)/9,0,1)*100;
+  $('#bA').style.width=pos(R.A)+'%'; $('#bW').style.width=pos(W)+'%'; setT('vA',force(R.A)); setT('vW',force(W));
+  const c=$('#stick'); c.className='chip '+(R.stick?'ok':'bad'); setT('stick',R.stick?'Cicak menempel kuat':'Cicak jatuh'); }
+function stats2(){ setT('sHB',String(hbCount)); setT('sTouch',String(touchCount)); setT('sDust',dustTotal?Math.round(dustGone/dustTotal*100)+'%':'—');
+  setT('sState',respawn>0?'menetes':S.glass?(moving?'meluncur pelan':'menyebar, membasahi'):(moving?'menggelinding':'bulat, diam')); }
+
+function explain(){
+  let T,B,M,F;
+  if(S.mode===1){ const R=m1(), d=S.d;
+    if(R.f<=0){ T='Terlalu dekat: tolak-menolak'; B=`Pada ${fmt(d,2)} nm awan elektron spatula dan dinding mulai bertumpuk. Elektron saling menolak sangat kuat, jadi spatula terdorong menjauh dan tidak bisa menempel.`; }
+    else if(d<=0.45){ T='Kontak ideal: gaya Van der Waals paling kuat'; B='Elektron di molekul spatula terus bergerak acak. Saat elektron berkumpul di satu sisi, terbentuk dipol sesaat (δ+ dan δ−). Dipol ini mendorong elektron di molekul dinding sehingga dinding ikut membentuk dipol. Kedua dipol lalu saling menarik: inilah gaya dispersi London.'; }
+    else if(d<=1.2){ T='Mendekat: tarikan mulai terasa'; B=`Pada ${fmt(d,2)} nm dipol sesaat di spatula mulai memengaruhi molekul dinding, tetapi tarikannya masih lemah. Gaya Van der Waals turun tajam jika jarak bertambah, jadi spatula harus sangat dekat dengan dinding.`; }
+    else { T='Terlalu jauh: hampir tidak ada tarikan'; B=`Pada ${fmt(d,2)} nm fluktuasi elektron spatula dan dinding bergerak sendiri-sendiri, tidak saling mengikuti. Garis gaya tidak menyala. Geser spatula hingga sekitar 0,4 nm.`; }
+    M=R.stick?`Satu spatula hanya menarik ${fmt(R.f,2)} nN, tetapi ${big(R.N)} kontak bersama-sama menghasilkan ${force(R.A)}, lebih besar dari berat cicak ${force(W)}. Cicak menempel.`
+      :R.f>0?`Satu spatula menarik ${fmt(R.f,2)} nN. Dengan ${big(R.N)} kontak, total hanya ${force(R.A)}, kurang dari berat ${force(W)}. Dibutuhkan sekitar ${big(R.need)} kontak pada jarak ini.`:'Tanpa tarikan, berapa pun jumlah spatulanya, cicak tetap jatuh.';
+    F=`Adhesi total = N × F(spatula) = ${big(R.N)} × ${fmt(Math.max(0,R.f),2)} nN`;
+  } else {
+    if(S.glass){ T='Kaca: adhesi lebih kuat dari kohesi'; B='Permukaan kaca punya gugus –OH yang polar. Molekul air membentuk ikatan hidrogen dengan permukaan (garis biru putus-putus ke bawah). Tarikan air ke kaca lebih besar daripada tarikan antar-air, sehingga tetes melebar dan membasahi kaca.';
+      M=S.tilt>0?'Saat dimiringkan, air menempel kuat dan hanya merayap pelan. Debu tidak ikut terangkat.':'Bandingkan dengan daun talas: di sana air tetap bulat.'; F=`adhesi (air–kaca) > kohesi (air–air)  →  air menyebar`; }
+    else { T='Daun talas: kohesi menang, air tetap bulat'; B='Molekul air saling menarik lewat ikatan hidrogen (garis biru). Molekul di tepi tetes ditarik ke dalam (panah putih), jadi tetes membulat. Lilin daun bersifat nonpolar sehingga tidak bisa membentuk ikatan hidrogen dengan air, dan air hanya menyentuh ujung papila. Di bawahnya terperangkap kantong udara.';
+      M=moving?'Tetes menggelinding. Debu lebih mudah menempel ke air daripada ke lilin, jadi debu terangkat dan terbawa: efek lotus (self-cleaning).':S.tilt>0?'Kemiringan masih kecil. Tetes mulai bergerak setelah gravitasi mengalahkan tarikan lemah pada ujung papila.':'Miringkan daun sedikit saja untuk membuat tetes menggelinding dan menyapu debu.';
+      F=`kohesi (air–air) ≫ adhesi (air–lilin)  →  tetes bulat`; }
+  }
+  setT('exT',T); setT('exB',B); setT('exM',M); setT('exF',F);
+}
+
+let last=performance.now(), tick=0;
+function frame(ts){ const dt=Math.min(0.05,(ts-last)/1000); last=ts; const t=ts/1000;
+  if(OK){ if(S.mode===1){ dDisp+=(S.d-dDisp)*Math.min(1,dt*12); drawM1(t,dt); meters(); } else { updateM2(dt); drawM2(); stats2(); } }
+  if(++tick%12===0) explain();
+  requestAnimationFrame(frame); }
+sync(); spawnDust(); spawnDrop(); setMode(1); meters(); requestAnimationFrame(frame);
+})();
+</script>

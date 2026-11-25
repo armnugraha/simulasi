@@ -1,0 +1,1042 @@
+<title>Lab Biomimetik Antarmolekul</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: sticky instrument header with progress → mode tabs → [canvas stage | graph + controls] → challenge bench → quiz */
+:root{
+  --bg:#EDF1F3; --surface:#FFFFFF; --surface-2:#F5F8F9; --ink:#14212B; --muted:#596A77; --line:#D5DDE2;
+  --accent:#0E7380; --accent-ink:#FFFFFF; --gecko:#A9620C; --taro:#18799F;
+  --ok:#1C8449; --ok-bg:#E2F3E9; --warn:#A86E12; --warn-bg:#FBF0DC; --bad:#BD3B34; --bad-bg:#FBE8E6;
+  --font-display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1318; --surface:#131C23; --surface-2:#17222A; --ink:#E1E9EE; --muted:#8C9EAB; --line:#24333D;
+    --accent:#3CBFC7; --accent-ink:#04252A; --gecko:#E8A24B; --taro:#58B5DE;
+    --ok:#5BC986; --ok-bg:#14301F; --warn:#E3AA4E; --warn-bg:#33270F; --bad:#EF7A70; --bad-bg:#3A1C1A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1318; --surface:#131C23; --surface-2:#17222A; --ink:#E1E9EE; --muted:#8C9EAB; --line:#24333D;
+  --accent:#3CBFC7; --accent-ink:#04252A; --gecko:#E8A24B; --taro:#58B5DE;
+  --ok:#5BC986; --ok-bg:#14301F; --warn:#E3AA4E; --warn-bg:#33270F; --bad:#EF7A70; --bad-bg:#3A1C1A;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;line-height:1.2}
+.wrap{max-width:1340px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:12px 8px}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.brand h1{font-size:clamp(19px,2.2vw,24px);font-weight:700}
+.prog{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.prog-main{display:flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2)}
+.prog-main .lbl{font-size:13px;color:var(--muted)}
+.prog-main b{font-family:var(--font-mono);font-size:15px;color:var(--ink)}
+.segs{display:flex;gap:4px}
+.segs span{width:22px;height:8px;border-radius:3px;background:var(--line);transition:background .3s}
+.segs span.on{background:var(--ok)}
+.quizmini{font-size:13px;color:var(--muted)}
+.quizmini b{font-family:var(--font-mono);color:var(--ink)}
+.linkbtn{background:none;border:1px solid transparent;padding:4px 8px;border-radius:6px;font-size:12px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.linkbtn.arm{color:var(--bad);border-color:var(--bad);text-decoration:none}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tab{background:none;border:none;border-bottom:3px solid transparent;padding:8px 14px 9px;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap}
+.tab small{font-family:var(--font-mono);font-weight:500;font-size:11px;margin-right:6px;opacity:.8}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[data-mode="gecko"][aria-selected="true"]{border-color:var(--gecko)}
+.tab[data-mode="taro"][aria-selected="true"]{border-color:var(--taro)}
+.tab[data-mode="quiz"][aria-selected="true"]{border-color:var(--accent)}
+@media (max-width:720px){header.top{position:static}}
+
+main{padding-block:18px 40px;display:flex;flex-direction:column;gap:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.work{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1020px){.work{grid-template-columns:minmax(0,1fr)}}
+.stage{padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.stage-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+.stage-head h2{font-size:18px}
+.stage-head span{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+canvas{display:block;width:100%;max-width:100%;border-radius:8px;background:#0C141B}
+#stage{aspect-ratio:900/600;touch-action:pan-y}
+#graph{aspect-ratio:440/380}
+.caption{margin:0;font-size:13px;color:var(--muted);max-width:90ch}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{padding:14px;display:flex;flex-direction:column;gap:12px}
+.panel h3{font-size:15px;font-weight:600}
+.panel-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.panel-h span{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.ro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:0;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ro>div{background:var(--surface-2);padding:8px 10px;min-width:0}
+.ro dt{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ro dd{margin:2px 0 0;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:16px;font-weight:500;overflow-wrap:anywhere}
+.ro dd small{font-size:11px;color:var(--muted);font-weight:400}
+.ro .wide{grid-column:1/-1}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:13px;font-weight:600;padding:2px 9px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctl label{font-size:13.5px;font-weight:500}
+.ctl output{font-family:var(--font-mono);font-size:13.5px;font-variant-numeric:tabular-nums}
+.ctl .ticks{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 10px;text-align:left;font-size:13px;line-height:1.3}
+.seg button b{display:block;font-size:13.5px}
+.seg button span{color:var(--muted);font-size:12px}
+.seg button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.opts label{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.3;cursor:pointer}
+.opts label b{display:block;font-size:13.5px}
+.opts label span{color:var(--muted);font-size:12px}
+.opts input{accent-color:var(--accent);margin-top:2px}
+.opts label:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+.compbar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line)}
+.compbar span{display:block;height:100%;transition:width .3s}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media (max-width:460px){.opts,.seg{grid-template-columns:1fr}}
+
+/* challenges */
+.bench-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;margin-bottom:12px}
+.bench-h h2{font-size:20px}
+.bench-h p{margin:0;font-size:13px;color:var(--muted)}
+.chgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.ch{padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0;transition:border-color .3s,background .3s}
+.ch-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tag{font-family:var(--font-mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line)}
+.tag.gecko{color:var(--gecko)} .tag.taro{color:var(--taro)}
+.check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.check svg{width:13px;height:13px;opacity:0}
+.ch h3{font-size:15px}
+.ch p{margin:0;font-size:13.5px}
+.ch .live{font-family:var(--font-mono);font-size:12px;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:6px 8px;min-height:2.6em}
+.ch .exp{display:none;font-size:13px;border-top:1px dashed var(--line);padding-top:8px}
+.ch .exp b{color:var(--ok)}
+.ch.done{border-color:var(--ok);background:linear-gradient(var(--ok-bg),var(--surface) 70%)}
+.ch.done .check{background:var(--ok);border-color:var(--ok)}
+.ch.done .check svg{opacity:1}
+.ch.done .exp{display:block}
+.ch .btn{align-self:flex-start;margin-top:auto}
+
+/* quiz */
+.quiz{display:flex;flex-direction:column;gap:14px}
+.quiz-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.quiz-h h2{font-size:20px}
+.q{padding:16px;display:flex;flex-direction:column;gap:10px}
+.q .qn{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.q .qt{margin:0;font-size:15px;font-weight:500;max-width:80ch}
+.q .ops{display:flex;flex-direction:column;gap:6px}
+.q .op{display:flex;gap:10px;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 12px;font-size:14px;line-height:1.4}
+.q .op .k{font-family:var(--font-mono);font-weight:600;color:var(--muted);flex:none}
+.q .op:not([disabled]):hover{border-color:var(--accent)}
+.q .op[disabled]{cursor:default}
+.q .op.right{border-color:var(--ok);background:var(--ok-bg)}
+.q .op.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.q .fb{font-size:13.5px;border-radius:8px;padding:10px 12px;background:var(--surface-2);border-left:3px solid var(--line)}
+.q .fb.good{border-left-color:var(--ok)} .q .fb.bad{border-left-color:var(--bad)}
+.q .fb p{margin:0 0 6px} .q .fb p:last-child{margin:0}
+.final{padding:16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.final .big{font-family:var(--font-display);font-size:28px;font-weight:700}
+
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;transition:all .3s;z-index:50;max-width:calc(100% - 32px)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <div class="eyebrow">Modul Praktikum Virtual · Biofisika Antarmuka</div>
+      <h1>Lab Biomimetik Antarmolekul</h1>
+    </div>
+    <div class="prog">
+      <div class="prog-main" aria-live="polite">
+        <span class="lbl">Tantangan Selesai:</span><b id="progN">0/4</b>
+        <div class="segs" id="segs"><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="quizmini">Kuis analisis: <b id="quizN">0/3</b></div>
+      <button class="linkbtn" id="resetAll" type="button">Reset progres</button>
+    </div>
+  </div>
+  <nav class="wrap tabs" role="tablist" aria-label="Mode eksplorasi">
+    <button class="tab" role="tab" id="tab-gecko" data-mode="gecko" aria-selected="true"><small>M1</small>Adhesi Kaki Cicak</button>
+    <button class="tab" role="tab" id="tab-taro" data-mode="taro" aria-selected="false"><small>M2</small>Superhidrofobisitas Daun Talas</button>
+    <button class="tab" role="tab" id="tab-quiz" data-mode="quiz" aria-selected="false"><small>Q</small>Soal Analisis</button>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section id="lab" aria-label="Simulasi">
+    <div class="work">
+      <div class="card stage">
+        <div class="stage-head"><h2 id="stageTitle">Gaya van der Waals pada spatula cicak</h2><span id="stageSub">skala: nanometer</span></div>
+        <canvas id="stage" width="900" height="600" aria-label="Visualisasi mikroskopis simulasi"></canvas>
+        <p class="caption" id="stageCap"></p>
+      </div>
+      <aside class="side">
+        <div class="card panel">
+          <div class="panel-h"><h3 id="graphTitle">Potensial Lennard-Jones</h3><span id="graphSub">real-time</span></div>
+          <canvas id="graph" width="440" height="380" aria-label="Grafik real-time"></canvas>
+          <div class="legend" id="graphLegend"></div>
+        </div>
+
+        <!-- Mode 1 controls -->
+        <div class="card panel" id="ctlGecko">
+          <div class="panel-h"><h3>Pembacaan kuantitatif</h3><span>1 seta ≈ 1000 spatulae</span></div>
+          <dl class="ro">
+            <div><dt>Jarak pemisahan r</dt><dd id="ro_r">—</dd></div>
+            <div><dt>Zona</dt><dd id="ro_zone" style="font-size:13.5px">—</dd></div>
+            <div><dt>V(r) per pasangan</dt><dd id="ro_V">—</dd></div>
+            <div><dt>F(r) per pasangan</dt><dd id="ro_F">—</dd></div>
+            <div><dt>Energi adhesi W</dt><dd id="ro_E">—</dd></div>
+            <div><dt>Gaya tarik total</dt><dd id="ro_Ft">—</dd></div>
+            <div><dt>Ekstrapolasi 4 kaki</dt><dd id="ro_Fall">—</dd></div>
+            <div><dt>Status kaki</dt><dd id="ro_status">—</dd></div>
+          </dl>
+          <div class="ctl">
+            <div class="ctl-row"><label for="rSl">Jarak pemisahan r</label><output id="rOut" for="rSl">—</output></div>
+            <input type="range" id="rSl" min="0.2" max="2" step="0.005" value="0.8">
+            <div class="ticks"><span>0,20 nm</span><span>r₀ ≈ 0,35</span><span>2,00 nm</span></div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-row"><label for="thSl">Sudut tarikan θ (peeling)</label><output id="thOut" for="thSl">—</output></div>
+            <input type="range" id="thSl" min="0" max="90" step="1" value="10">
+            <div class="ticks"><span>0° geser</span><span>30° kritis</span><span>90° tegak</span></div>
+          </div>
+          <div class="ctl">
+            <label>Jenis substrat</label>
+            <div class="seg" id="subSeg">
+              <button type="button" id="sub_polar" data-sub="polar" aria-pressed="true"><b>Kaca SiO₂</b><span>polar · hidrofilik</span></button>
+              <button type="button" id="sub_nonpolar" data-sub="nonpolar" aria-pressed="false"><b>PTFE (Teflon)</b><span>nonpolar · hidrofobik</span></button>
+            </div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-row"><label>Komposisi gaya van der Waals</label><output id="compOut" style="font-size:12px">—</output></div>
+            <div class="compbar"><span id="compL" style="background:var(--accent)"></span><span id="compP" style="background:var(--gecko)"></span></div>
+            <p class="note">Hamaker efektif A = √(A<sub>keratin</sub>·A<sub>substrat</sub>). Dispersi London (biru-hijau) bekerja pada kedua substrat; dipol permanen (Keesom + Debye, jingga) hanya ada pada kaca.</p>
+          </div>
+        </div>
+
+        <!-- Mode 2 controls -->
+        <div class="card panel" id="ctlTaro" hidden>
+          <div class="panel-h"><h3>Pembacaan kuantitatif</h3><span>tetes 10 µL</span></div>
+          <dl class="ro">
+            <div><dt>Sudut kontak θc</dt><dd id="ro_th">—</dd></div>
+            <div><dt>Keadaan</dt><dd id="ro_state" style="font-size:13.5px">—</dd></div>
+            <div><dt>θ maju / θ mundur</dt><dd id="ro_thAR">—</dd></div>
+            <div><dt>Histeresis Δθ</dt><dd id="ro_hys">—</dd></div>
+            <div><dt>Sudut luncur α*</dt><dd id="ro_alpha">—</dd></div>
+            <div><dt>θ Young (lilin halus)</dt><dd id="ro_thY">—</dd></div>
+            <div class="wide"><dt>Debu tersapu (oleh tetes Cassie)</dt><dd id="ro_clean">—</dd></div>
+          </dl>
+          <div class="ctl">
+            <label>Struktur permukaan</label>
+            <div class="opts" id="surfOpts">
+              <label><input type="radio" name="surf" id="surf_cassie" value="cassie" checked><div><b>Superhidrofobik</b><span>Cassie–Baxter, daun talas</span></div></label>
+              <label><input type="radio" name="surf" id="surf_wenzel" value="wenzel"><div><b>Keadaan Wenzel</b><span>celah terisi, pinning</span></div></label>
+              <label><input type="radio" name="surf" id="surf_smooth" value="smooth"><div><b>Halus hidrofobik</b><span>lapisan lilin rata</span></div></label>
+              <label><input type="radio" name="surf" id="surf_glass" value="glass"><div><b>Hidrofilik</b><span>kaca bersih</span></div></label>
+            </div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-row"><label for="gSl">Tegangan permukaan γ<sub>LV</sub></label><output id="gOut" for="gSl">—</output></div>
+            <input type="range" id="gSl" min="20" max="72" step="0.5" value="72">
+            <div class="ticks"><span>20 (surfaktan pekat)</span><span>72 mN/m air murni</span></div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-row"><label for="aSl">Kemiringan substrat α</label><output id="aOut" for="aSl">—</output></div>
+            <input type="range" id="aSl" min="0" max="45" step="0.5" value="0">
+            <div class="ticks"><span>0°</span><span>45°</span></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="dustBtn">Taburkan debu lagi</button><button class="btn" type="button" id="dropBtn">Teteskan air baru</button></div>
+          <p class="note">Model: Owens–Wendt untuk θ Young, Cassie–Baxter (f = 0,12), Wenzel (r = 1,8), dan kriteria luncur Furmidge m·g·sin α = γ<sub>LV</sub>·w·(cos θ<sub>R</sub> − cos θ<sub>A</sub>).</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="quiz" class="quiz" hidden aria-label="Soal analisis">
+    <div class="quiz-h"><h2>Soal Analisis Konseptual</h2><span class="mono" id="quizScore">Skor: 0/3</span></div>
+    <div id="quizList" class="quiz"></div>
+    <div class="card final" id="quizFinal" hidden>
+      <div><div class="eyebrow">Skor akhir</div><div class="big" id="finalScore">—</div><div class="note" id="finalMsg"></div></div>
+      <button class="btn pri" type="button" id="quizRetry">Ulangi kuis</button>
+    </div>
+  </section>
+
+  <section aria-label="Lab Challenge">
+    <div class="bench-h">
+      <h2>Lab Challenge</h2>
+      <p>Setiap tantangan diperiksa otomatis dari parameter simulasi yang sedang berjalan.</p>
+    </div>
+    <div class="chgrid" id="chGrid"></div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const D2R=Math.PI/180, TAU=Math.PI*2;
+const RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt=(x,d=2)=>{ if(!isFinite(x)) return '—'; let s=Math.abs(x).toFixed(d).replace('.',','); return (x<0 && Number(Math.abs(x).toFixed(d))!==0?'−':'')+s; };
+const MONO='"IBM Plex Mono", Consolas, monospace', SANS='"IBM Plex Sans", "Segoe UI", sans-serif';
+// instrument display palette (dark "scope" screen in both themes, by design)
+const SC={bg:'#0C141B',panel:'#121E27',grid:'rgba(140,175,195,0.07)',line:'rgba(160,190,210,0.22)',text:'#CFDAE3',mute:'#7E93A3',
+  amber:'#F0A93B',teal:'#3FD0C9',blue:'#5CB8FF',coral:'#FF6F61',green:'#7BD88F',violet:'#B49CFF',white:'#EAF2F7'};
+
+/* ---------------- state ---------------- */
+const S={mode:'gecko', g:{r:0.8,theta:10,sub:'polar'}, t:{surf:'cassie',gamma:72,tilt:0}, ch:[false,false,false,false], quiz:[null,null,null]};
+const KEY='biomim-lab-v1';
+try{ const d=JSON.parse(localStorage.getItem(KEY)||'null'); if(d){ if(Array.isArray(d.ch)) S.ch=d.ch.map(Boolean).slice(0,4); if(Array.isArray(d.quiz)) S.quiz=d.quiz.slice(0,3);} }catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ch:S.ch,quiz:S.quiz})); }catch(e){} }
+
+/* ---------------- canvas helper ---------------- */
+function mkCanvas(cv,W,H){
+  const o={cv,ctx:cv.getContext('2d'),W,H,s:1,ok:false};
+  const fit=()=>{ const w=cv.clientWidth; if(!w){o.ok=false;return;} const dpr=Math.min(2,window.devicePixelRatio||1);
+    cv.width=Math.round(w*dpr); cv.height=Math.round(w*H/W*dpr); o.s=cv.width/W; o.ok=true; };
+  new ResizeObserver(fit).observe(cv); fit(); return o;
+}
+const STG=mkCanvas($('#stage'),900,600), GR=mkCanvas($('#graph'),440,380);
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function arrow(ctx,x1,y1,x2,y2,col,lw=2,hs=7){ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  const a=Math.atan2(y2-y1,x2-x1);ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-hs*Math.cos(a-0.45),y2-hs*Math.sin(a-0.45));ctx.lineTo(x2-hs*Math.cos(a+0.45),y2-hs*Math.sin(a+0.45));ctx.closePath();ctx.fill();}
+function label(ctx,txt,x,y,{font='12px '+MONO,col=SC.text,bg=null,align='left',pad=4}={}){
+  ctx.font=font; ctx.textAlign=align; ctx.textBaseline='middle';
+  if(bg){const w=ctx.measureText(txt).width; const x0=align==='center'?x-w/2:align==='right'?x-w:x; ctx.fillStyle=bg; rr(ctx,x0-pad,y-9,w+pad*2,18,4); ctx.fill();}
+  ctx.fillStyle=col; ctx.fillText(txt,x,y); ctx.textAlign='left';
+}
+
+/* =================================================================
+   MODE 1 · Lennard-Jones & gecko adhesion
+   ================================================================= */
+const R0=0.35, SIG=R0/Math.pow(2,1/6);         // nm
+const SUBS={
+  polar:{name:'Kaca SiO₂ (polar)', Ad:6.24e-20, Ap:1.0e-20},
+  nonpolar:{name:'PTFE / Teflon (nonpolar)', Ad:4.77e-20, Ap:0}
+};
+const A_REF=SUBS.polar.Ad+SUBS.polar.Ap;
+const epsOf=k=>10*(SUBS[k].Ad+SUBS[k].Ap)/A_REF;          // meV (ε kaca = 10 meV)
+const LJV=(r,e)=>{const s6=Math.pow(SIG/r,6);return 4*e*(s6*s6-s6);};               // meV
+const LJF=(r,e)=>{const s6=Math.pow(SIG/r,6);return 24*e*1.602176634e-22/(r*1e-9)*(2*s6*s6-s6)*1e12;}; // pN, + = tolak
+const FATT=e=>-LJF(Math.pow(26/7,1/6)*SIG,e);              // gaya tarik maksimum per pasangan (pN)
+const W0=k=>(SUBS[k].Ad+SUBS[k].Ap)/(12*Math.PI*Math.pow(R0*1e-9,2))*1000; // mJ/m² pada r0
+const peel=th=>th<=10?1:Math.pow((1-Math.cos(10*D2R))/(1-Math.cos(th*D2R)),0.6);
+const H30=peel(30);
+function gecko(r,th,k){
+  const e=epsOf(k), V=LJV(r,e), F=LJF(r,e);
+  const Ead=W0(k)*(-V/e);                                   // mJ/m²
+  const Fsp=1.5*Math.PI*100e-9*Math.max(0,Ead)/1000*1e9;    // JKR, R_spatula = 100 nm → nN
+  const Fseta=Fsp*peel(th);                                 // 1000 spatulae → µN (nN×1000/1000)
+  const FsetaMax=1.5*Math.PI*100e-9*W0(k)/1000*1e9;
+  const Fth=FsetaMax*H30;
+  let status;
+  if(Ead<0) status={t:'Terdorong (Pauli)',c:'bad'};
+  else if(Fseta>Fth*1.0001 && Fseta>0.6) status={t:'Menempel',c:'ok'};
+  else if(Ead>0.25*W0(k)) status={t:'Lepas (peeling)',c:'warn'};
+  else status={t:'Tidak kontak',c:'warn'};
+  let zone;
+  if(r<0.33) zone='Tolakan Pauli'; else if(r<=0.37) zone='Kesetimbangan F≈0'; else if(r<=0.6) zone='Tarik kuat'; else if(r<=1.2) zone='Tarik lemah'; else zone='Di luar jangkauan';
+  return {e,V,F,Ead,Fsp,Fseta,Fth,FsetaMax,status,zone};
+}
+
+let rDisp=S.g.r;
+const NANO={YS:528,PX:170,n:8,cx0:300,dx:74};
+const mkNoise=()=>({p:[Math.random()*TAU,Math.random()*TAU,Math.random()*TAU,Math.random()*TAU],w:[1.7+Math.random()*1.6,3.1+Math.random()*2.2,1.5+Math.random()*1.8,2.9+Math.random()*2.4]});
+const nzS=Array.from({length:8},mkNoise), nzB=Array.from({length:8},mkNoise);
+const nz=(a,t)=>[Math.sin(a.w[0]*t+a.p[0])+0.6*Math.sin(a.w[1]*t+a.p[1]), Math.sin(a.w[2]*t+a.p[2])+0.6*Math.sin(a.w[3]*t+a.p[3])];
+
+function cloud(ctx,x,y,rad,d,rgb,nuc){
+  const gx=x+d[0],gy=y+d[1];
+  const g=ctx.createRadialGradient(gx,gy,0,gx,gy,rad*1.3);
+  g.addColorStop(0,`rgba(${rgb},0.85)`);g.addColorStop(0.55,`rgba(${rgb},0.38)`);g.addColorStop(1,`rgba(${rgb},0)`);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(gx,gy,rad*1.3,0,TAU);ctx.fill();
+  ctx.fillStyle=nuc;ctx.beginPath();ctx.arc(x,y,4.2,0,TAU);ctx.fill();
+}
+function deltaLabels(ctx,x,y,d,rad){
+  const m=Math.hypot(d[0],d[1]); if(m<2.2) return;
+  const ux=d[0]/m, uy=d[1]/m;
+  label(ctx,'δ−',x+ux*rad*0.95,y+uy*rad*0.95,{font:'600 12px '+SANS,col:'#DDF3FF',align:'center'});
+  label(ctx,'δ+',x-ux*rad*0.95,y-uy*rad*0.95,{font:'600 12px '+SANS,col:'#FFD9D3',align:'center'});
+}
+function panel(ctx,x,y,w,h,title){ctx.fillStyle=SC.panel;rr(ctx,x,y,w,h,10);ctx.fill();ctx.strokeStyle=SC.line;ctx.lineWidth=1;ctx.stroke();label(ctx,title,x+10,y+16,{font:'600 11px '+MONO,col:SC.mute});}
+
+function drawHier(ctx,th){
+  // Panel 1: toe with lamellae
+  panel(ctx,12,12,216,184,'1 · JARI KAKI  (mm)');
+  ctx.save(); ctx.translate(120,110);
+  ctx.beginPath(); ctx.ellipse(0,0,84,42,0,0,TAU); ctx.fillStyle='#4E3B29'; ctx.fill();
+  ctx.save(); ctx.clip();
+  ctx.strokeStyle='#D9B071'; ctx.lineWidth=3;
+  for(let k=0;k<8;k++){const x=-70+k*20; ctx.beginPath(); ctx.moveTo(x,-44); ctx.quadraticCurveTo(x+11,0,x,44); ctx.stroke();}
+  ctx.restore();
+  ctx.setLineDash([3,3]); ctx.strokeStyle=SC.amber; ctx.lineWidth=1.2; ctx.strokeRect(22,-34,22,68); ctx.setLineDash([]);
+  ctx.restore();
+  label(ctx,'lamela (scansor)',150,170,{font:'10.5px '+MONO,col:SC.mute,align:'center'});
+  ctx.strokeStyle=SC.text; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(24,184); ctx.lineTo(64,184); ctx.stroke();
+  label(ctx,'1 mm',70,184,{font:'10px '+MONO,col:SC.mute});
+  ctx.setLineDash([2,4]); ctx.strokeStyle='rgba(240,169,59,0.45)'; ctx.beginPath(); ctx.moveTo(142,144); ctx.lineTo(30,232); ctx.moveTo(164,144); ctx.lineTo(210,232); ctx.stroke(); ctx.setLineDash([]);
+
+  // Panel 2: setae
+  panel(ctx,12,204,216,188,'2 · SETAE  (~110 µm)');
+  const top=232, bot=366, det=clamp((th-30)/60,0,1);
+  ctx.fillStyle='#7A5A36'; ctx.fillRect(22,top-6,196,10);
+  ctx.fillStyle='#3B4955'; ctx.fillRect(22,bot,196,6);
+  const tilt=12+th*0.22;
+  for(let k=0;k<6;k++){
+    const bx=36+k*30, lift=Math.min(40,Math.max(0,det*7-k)*9);
+    const tx=bx+tilt, ty=bot-2-lift;
+    ctx.strokeStyle='#C99A5B'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(bx,top+4); ctx.quadraticCurveTo(bx+tilt*0.1,(top+bot)/2,tx,ty-14); ctx.stroke();
+    ctx.lineWidth=1; for(let b=-2;b<=2;b++){ctx.beginPath();ctx.moveTo(tx,ty-14);ctx.lineTo(tx+b*4+tilt*0.12,ty);ctx.stroke();}
+    if(k===3){ctx.setLineDash([3,3]);ctx.strokeStyle=SC.amber;ctx.lineWidth=1.2;ctx.strokeRect(tx-14,ty-20,28,26);ctx.setLineDash([]);}
+  }
+  label(ctx,'100 µm',70,382,{font:'10px '+MONO,col:SC.mute}); ctx.strokeStyle=SC.text; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(24,382); ctx.lineTo(64,382); ctx.stroke();
+  const t3x=36+3*30+tilt;
+  ctx.setLineDash([2,4]); ctx.strokeStyle='rgba(240,169,59,0.45)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(t3x-14,bot+6); ctx.lineTo(30,424); ctx.moveTo(t3x+14,bot+6); ctx.lineTo(210,424); ctx.stroke(); ctx.setLineDash([]);
+
+  // Panel 3: spatulae
+  panel(ctx,12,400,216,188,'3 · SPATULAE  (~200 nm)');
+  const det3=clamp((th-25)/50,0,1);
+  ctx.strokeStyle='#C99A5B'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(120+th*0.15,424); ctx.lineTo(120,470); ctx.stroke();
+  ctx.fillStyle='#3B4955'; ctx.fillRect(22,560,196,6);
+  for(let k=0;k<7;k++){
+    const ex=36+k*28, lift=Math.min(26,Math.max(0,det3*8-k)*6), ey=552-lift;
+    ctx.strokeStyle='#C99A5B'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(120,470); ctx.quadraticCurveTo(ex,492,ex,ey-6); ctx.stroke();
+    ctx.fillStyle=lift>3?'#8A6A44':'#E2B676'; ctx.beginPath(); ctx.moveTo(ex,ey-7); ctx.lineTo(ex-10,ey+7); ctx.lineTo(ex+10,ey+7); ctx.closePath(); ctx.fill();
+    if(k===3){ctx.setLineDash([3,3]);ctx.strokeStyle=SC.teal;ctx.lineWidth=1.2;ctx.strokeRect(ex-15,ey-12,30,24);ctx.setLineDash([]);
+      ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(63,208,201,0.45)';ctx.beginPath();ctx.moveTo(ex+15,ey-12);ctx.lineTo(240,8);ctx.moveTo(ex+15,ey+12);ctx.lineTo(240,592);ctx.stroke();ctx.setLineDash([]);}
+  }
+}
+
+function drawGecko(t){
+  const o=STG; if(!o.ok) return; const ctx=o.ctx;
+  ctx.setTransform(o.s,0,0,o.s,0,0);
+  ctx.fillStyle=SC.bg; ctx.fillRect(0,0,900,600);
+  const k=S.g.sub, th=S.g.theta, e=epsOf(k), FA=FATT(epsOf('polar'));
+  drawHier(ctx,th);
+  const {YS,PX,n,cx0,dx}=NANO, A=RM?2.5:6.5, tm=RM?0.35:1;
+  ctx.save(); ctx.beginPath(); ctx.rect(240,0,660,600); ctx.clip();
+  ctx.strokeStyle=SC.grid; ctx.lineWidth=1;
+  for(let x=255;x<900;x+=34){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,600);ctx.stroke();}
+  for(let y=YS;y>0;y-=PX*0.2){ctx.beginPath();ctx.moveTo(240,y);ctx.lineTo(900,y);ctx.stroke();}
+
+  // columns with peeling lift
+  const pf=clamp((th-15)/55,0,1)*(n-1);
+  const cols=[];
+  for(let i=0;i<n;i++){const lift=Math.max(0,pf-i)*0.09*(1+th/45); const r=rDisp+lift; cols.push({x:cx0+i*dx,r,y:YS-r*PX});}
+  const dS=[],dB=[];
+  for(let i=0;i<n;i++){
+    const a=nz(nzS[i],t*tm), b=nz(nzB[i],t*tm);
+    const ds=[a[0]*A*0.7,a[1]*A]; dS.push(ds);
+    const c=clamp(Math.pow(R0/cols[i].r,3),0,1)*0.85;
+    dB.push([(1-c)*b[0]*A*0.7+c*ds[0],(1-c)*b[1]*A+c*ds[1]]);
+  }
+  // substrate
+  const polar=k==='polar';
+  const sg=ctx.createLinearGradient(0,YS,0,600); sg.addColorStop(0,polar?'#3A3226':'#22352B'); sg.addColorStop(1,'#10171C');
+  ctx.fillStyle=sg; ctx.fillRect(240,YS+14,660,90);
+  for(let i=0;i<n;i++){ // deep layer + bonds
+    const x=cols[i].x, xb=x+dx/2;
+    ctx.strokeStyle='rgba(200,200,200,0.25)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(x,YS); ctx.lineTo(xb-dx/2+dx*0.5,YS+58); ctx.lineTo(x+dx,YS); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-dx/2,YS+58); ctx.lineTo(x,YS); ctx.stroke();
+    ctx.fillStyle=polar?'#C9A56A':'#8C979F'; ctx.beginPath(); ctx.arc(xb,YS+58,10,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(x-dx/2,YS+58,10,0,TAU); ctx.fill();
+  }
+  for(let i=0;i<n;i++){
+    const x=cols[i].x;
+    cloud(ctx,x,YS,24,dB[i],polar?'255,128,108':'130,226,160',polar?'#FFE0D8':'#E3FFE9');
+    if(polar){ // silanol H + permanent dipole
+      ctx.fillStyle='#F2F5F7'; ctx.beginPath(); ctx.arc(x+22,YS-9,6,0,TAU); ctx.fill();
+      ctx.strokeStyle='#F2F5F7'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x+4,YS-2); ctx.lineTo(x+17,YS-7); ctx.stroke();
+    }
+  }
+  // spatula pad
+  const ext=(a,b)=>a+(a-b)*0.65;
+  const yL=ext(cols[0].y,cols[1].y), yR=ext(cols[n-1].y,cols[n-2].y), TH=340;
+  const pg=ctx.createLinearGradient(0,cols[n-1].y-TH,0,cols[n-1].y);
+  pg.addColorStop(0,'#2E2216'); pg.addColorStop(1,'#6A4C2C');
+  ctx.beginPath(); ctx.moveTo(cx0-48,yL-18);
+  for(const c of cols) ctx.lineTo(c.x,c.y-18);
+  ctx.lineTo(cx0+(n-1)*dx+48,yR-18); ctx.lineTo(cx0+(n-1)*dx+48,yR-18-TH);
+  for(let i=n-1;i>=0;i--) ctx.lineTo(cols[i].x,cols[i].y-18-TH);
+  ctx.lineTo(cx0-48,yL-18-TH); ctx.closePath(); ctx.fillStyle=pg; ctx.fill();
+  ctx.strokeStyle='rgba(240,180,110,0.13)'; ctx.lineWidth=1.2;
+  for(let s=1;s<=7;s++){ctx.beginPath(); ctx.moveTo(cx0-48,yL-18-s*30); for(const c of cols) ctx.lineTo(c.x,c.y-18-s*30+Math.sin(c.x*0.05+s)*3); ctx.lineTo(cx0+(n-1)*dx+48,yR-18-s*30); ctx.stroke();}
+  label(ctx,'Spatula · keratin-β',cx0+(n-1)*dx-10,cols[n-1].y-60,{font:'600 12px '+MONO,col:'#F3D2A6',align:'right'});
+  // spatula atoms
+  for(let i=0;i<n;i++){ cloud(ctx,cols[i].x,cols[i].y,24,dS[i],'255,196,120','#FFF1DC'); }
+  // Pauli overlap glow
+  for(let i=0;i<n;i++){ const r=cols[i].r; if(r<0.34){ const a=clamp((0.34-r)/0.12,0,1);
+    const my=(cols[i].y+YS)/2, g=ctx.createRadialGradient(cols[i].x,my,0,cols[i].x,my,34);
+    g.addColorStop(0,`rgba(255,80,70,${0.75*a})`); g.addColorStop(1,'rgba(255,80,70,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cols[i].x,my,34,0,TAU); ctx.fill(); }}
+  // δ labels on selected columns
+  for(const i of [1,4,6]){ deltaLabels(ctx,cols[i].x,cols[i].y,dS[i],24); deltaLabels(ctx,cols[i].x,YS,dB[i],24); }
+  // force arrows
+  for(const i of [0,2,4,6]){
+    const F=LJF(cols[i].r,e); if(Math.abs(F)<0.02*FA) continue;
+    const L=clamp(Math.abs(F)/FA*30,6,46), x=cols[i].x+dx/2, my=(cols[i].y+YS)/2;
+    if(F<0){ arrow(ctx,x,my-L-4,x,my-3,SC.teal,2,6); arrow(ctx,x,my+L+4,x,my+3,SC.teal,2,6); }
+    else { arrow(ctx,x,my-3,x,my-L-4,SC.coral,2,6); arrow(ctx,x,my+3,x,my+L+4,SC.coral,2,6); }
+  }
+  // ruler (nm) on left
+  ctx.strokeStyle=SC.mute; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(254,YS); ctx.lineTo(254,YS-2.0*PX); ctx.stroke();
+  for(let v=0;v<=2.0001;v+=0.1){const y=YS-v*PX, big=Math.abs(v*2-Math.round(v*2))<1e-6; ctx.beginPath(); ctx.moveTo(254,y); ctx.lineTo(big?264:259,y); ctx.stroke(); if(big&&v>0) label(ctx,fmt(v,1),267,y,{font:'10px '+MONO,col:SC.mute});}
+  label(ctx,'nm',248,YS-2.0*PX-14,{font:'10px '+MONO,col:SC.mute});
+  // dimension r at right column
+  const xr=870, yt=YS-rDisp*PX;
+  ctx.strokeStyle=SC.white; ctx.lineWidth=1.3; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(cols[n-1].x+18,yt); ctx.lineTo(xr+8,yt); ctx.moveTo(cols[n-1].x+18,YS); ctx.lineTo(xr+8,YS); ctx.stroke(); ctx.setLineDash([]);
+  if(YS-yt>14){arrow(ctx,xr,(yt+YS)/2,xr,yt+1,SC.white,1.3,5); arrow(ctx,xr,(yt+YS)/2,xr,YS-1,SC.white,1.3,5);}
+  label(ctx,'r',xr+10,(yt+YS)/2,{font:'italic 600 14px '+SANS,col:SC.white});
+  // pulling arrow
+  const ax=cols[1].x+20, ay=cols[1].y-160, L=110;
+  ctx.setLineDash([4,4]); ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax-L,ay); ctx.stroke(); ctx.setLineDash([]);
+  arrow(ctx,ax,ay,ax-L*Math.cos(th*D2R),ay-L*Math.sin(th*D2R),SC.amber,3,10);
+  ctx.strokeStyle=SC.amber; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(ax,ay,38,Math.PI,Math.PI+th*D2R); ctx.stroke();
+  label(ctx,`F tarik · θ = ${Math.round(th)}°`,ax-L-4,ay+18,{font:'600 12px '+MONO,col:SC.amber,bg:'rgba(12,20,27,0.75)'});
+  ctx.restore();
+  // overlays
+  const G=gecko(S.g.r,th,k);
+  const zc=S.g.r<0.33?SC.coral:S.g.r<=0.37?SC.green:S.g.r<=1.2?SC.teal:SC.mute;
+  ctx.fillStyle='rgba(12,20,27,0.82)'; rr(ctx,600,12,288,62,8); ctx.fill(); ctx.strokeStyle=SC.line; ctx.stroke();
+  label(ctx,`r = ${fmt(S.g.r,3)} nm`,612,30,{font:'600 15px '+MONO,col:SC.white});
+  label(ctx,G.zone,876,30,{font:'600 12px '+MONO,col:zc,align:'right'});
+  label(ctx,`F = ${fmt(G.F,2)} pN  ·  V = ${fmt(G.V,2)} meV`,612,56,{font:'12px '+MONO,col:SC.text});
+  label(ctx,'Substrat: '+SUBS[k].name+(polar?' · Si–OH dipol permanen':' · –CF₂– tanpa dipol neto'),254,22,{font:'11.5px '+MONO,col:polar?'#FFB3A6':'#A9EBBE',bg:'rgba(12,20,27,0.8)'});
+}
+
+function drawGraphGecko(){
+  const o=GR; if(!o.ok) return; const ctx=o.ctx; const W=440;
+  ctx.setTransform(o.s,0,0,o.s,0,0); ctx.fillStyle=SC.bg; ctx.fillRect(0,0,440,380);
+  const k=S.g.sub, other=k==='polar'?'nonpolar':'polar', eP=epsOf('polar'), FAp=FATT(eP);
+  const x0=54,x1=W-14, rx=r=>x0+(r-0.2)/1.8*(x1-x0);
+  const plots=[{y0:24,y1:172,min:-1.3*eP,max:1.0*eP,f:LJV,unit:'V(r) · meV',ticks:[-10,-5,0,5,10]},
+               {y0:212,y1:352,min:-1.35*FAp,max:1.0*FAp,f:LJF,unit:'F(r) · pN  (+ tolak / − tarik)',ticks:[-15,-10,-5,0,5,10]}];
+  for(const p of plots){
+    const vy=v=>p.y1-(v-p.min)/(p.max-p.min)*(p.y1-p.y0);
+    ctx.fillStyle='rgba(255,111,97,0.10)'; ctx.fillRect(rx(0.2),p.y0,rx(R0)-rx(0.2),p.y1-p.y0);
+    ctx.fillStyle='rgba(63,208,201,0.06)'; ctx.fillRect(rx(R0),p.y0,rx(2)-rx(R0),p.y1-p.y0);
+    ctx.strokeStyle=SC.grid; ctx.lineWidth=1;
+    for(const tv of p.ticks){ if(tv<p.min||tv>p.max) continue; const y=vy(tv); ctx.strokeStyle=tv===0?'rgba(200,220,235,0.35)':SC.grid; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke(); label(ctx,fmt(tv,0),x0-6,y,{font:'10px '+MONO,col:SC.mute,align:'right'}); }
+    for(const tr of [0.5,1.0,1.5,2.0]){ctx.strokeStyle=SC.grid; ctx.beginPath(); ctx.moveTo(rx(tr),p.y0); ctx.lineTo(rx(tr),p.y1); ctx.stroke();}
+    ctx.setLineDash([3,3]); ctx.strokeStyle='rgba(123,216,143,0.7)'; ctx.beginPath(); ctx.moveTo(rx(R0),p.y0); ctx.lineTo(rx(R0),p.y1); ctx.stroke(); ctx.setLineDash([]);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0,p.y0,x1-x0,p.y1-p.y0); ctx.clip();
+    for(const [kk,dash,col,lw] of [[other,[4,4],'rgba(200,215,225,0.35)',1.4],[k,[],p===plots[0]?SC.blue:SC.amber,2.2]]){
+      const e=epsOf(kk); ctx.setLineDash(dash); ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.beginPath();
+      for(let r=0.2;r<=2.0001;r+=0.003){const y=vy(p.f(r,e)); const yy=clamp(y,p.y0-50,p.y1+50); r===0.2?ctx.moveTo(rx(r),yy):ctx.lineTo(rx(r),yy);} ctx.stroke(); ctx.setLineDash([]);
+    }
+    // dot
+    const e=epsOf(k), v=p.f(rDisp,e), y=vy(v), yc=clamp(y,p.y0+5,p.y1-5), xd=rx(rDisp);
+    ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(xd,yc,10,0,TAU); ctx.fill();
+    ctx.fillStyle=SC.white; ctx.beginPath(); ctx.arc(xd,yc,5,0,TAU); ctx.fill();
+    if(y<p.y0) arrow(ctx,xd,p.y0+22,xd,p.y0+4,SC.coral,2,6);
+    ctx.restore();
+    label(ctx,p.unit,x0+4,p.y0-12,{font:'600 11px '+MONO,col:SC.text});
+    const vtxt=(p===plots[0]?fmt(v,2)+' meV':fmt(v,2)+' pN');
+    label(ctx,vtxt,x1,p.y0-12,{font:'600 11px '+MONO,col:SC.white,align:'right'});
+  }
+  // zone captions + x axis
+  label(ctx,'tolak Pauli',rx(0.2)+3,plots[0].y0+12,{font:'10px '+MONO,col:'#FF9A8F'});
+  label(ctx,'zona tarik · dispersi London ∝ −1/r⁶',rx(0.7),plots[0].y0+12,{font:'10px '+MONO,col:'#8FE6E1'});
+  label(ctx,'r₀',rx(R0)+3,plots[0].y1-10,{font:'600 11px '+MONO,col:SC.green});
+  const vy0=v=>plots[0].y1-(v-plots[0].min)/(plots[0].max-plots[0].min)*(plots[0].y1-plots[0].y0);
+  label(ctx,'−ε',rx(R0)+16,vy0(-epsOf(k))+12,{font:'10px '+MONO,col:SC.blue});
+  for(const tr of [0.2,0.5,1.0,1.5,2.0]) label(ctx,fmt(tr,1),rx(tr),364,{font:'10px '+MONO,col:SC.mute,align:'center'});
+  label(ctx,'r (nm)',x1,376,{font:'10px '+MONO,col:SC.mute,align:'right'});
+}
+
+/* =================================================================
+   MODE 2 · Wetting on taro leaf
+   ================================================================= */
+const WAX={d:25,p:0}, GLASS={d:30,p:40}, PMM=45, LEAF=345;
+function cosY(sol,g){const Ld=Math.min(g,21.8),Lp=Math.max(0,g-Ld);return -1+2*(Math.sqrt(sol.d*Ld)+Math.sqrt(sol.p*Lp))/g;}
+const acosd=c=>Math.acos(clamp(c,-1,1))/D2R;
+function dropGeo(th){const t=Math.max(4,th)*D2R,c=Math.cos(t);const R=Math.cbrt(3*10/(Math.PI*(2-3*c+c*c*c)));return {R,a:R*Math.sin(t),h:R*(1-c)};}
+function taro(surf,g){
+  const cW=cosY(WAX,g), thY=acosd(cW);
+  let th,thA,thR,state,collapsed=false,pinned=false,pick=0;
+  if(surf==='cassie'){
+    if(thY>90){ th=acosd(0.12*(clamp(cW,-1,1)+1)-1); const D=5+Math.max(0,110-thY); thA=th+0.4*D; thR=th-0.6*D; state='Cassie–Baxter'; pick=0.95; }
+    else { collapsed=true; pinned=true; th=acosd(1.8*cW); thA=th+12; thR=th-38; state='Wenzel (Cassie runtuh)'; }
+  } else if(surf==='wenzel'){ pinned=true; th=acosd(1.8*cW); thA=th+12; thR=th-38; state='Wenzel (pinning)'; }
+  else if(surf==='smooth'){ th=thY; thA=th+7; thR=th-8; state='Young (lilin halus)'; pick=0.12; }
+  else { th=acosd(cosY(GLASS,g)); thA=th+8; thR=th-6; state='Hidrofilik (kaca)'; pick=0.06; }
+  thA=Math.min(178,thA); thR=Math.max(0,thR);
+  const geo=dropGeo(th);
+  let ret=(g/1000)*(2*geo.a/1000)*(Math.cos(thR*D2R)-Math.cos(thA*D2R)); if(pinned) ret*=1.6;
+  const sa=ret/(1e-5*9.81);
+  const alphaC=sa>=1?Infinity:Math.asin(Math.max(0,sa))/D2R;
+  return {cW,thY,th,thA,thR,state,collapsed,pinned,pick,alphaC,geo};
+}
+let TS=taro(S.t.surf,S.t.gamma);
+const DUSTN=28;
+let dust=[], drop={id:1,s:-260,spawn:1,roll:0,moving:false}, removed=0, removedC=0;
+function initDust(){ dust=[]; for(let i=0;i<DUSTN;i++){ dust.push({x:-225+i*(545/(DUSTN-1))+(Math.random()-0.5)*12, r:2.4+Math.random()*2.2, c:Math.random()<0.5?'#B08A5A':'#8E8676', att:null, tested:0, gone:false, ang:0, cassie:false}); } removed=0; removedC=0; }
+function newDrop(){ drop={id:drop.id+1,s:0,spawn:0,roll:0,moving:false}; drop.s=Math.max(-290,-LEAF+10+TS.geo.a*PMM*Math.max(1,TS.th>90?1/Math.sin(TS.th*D2R):1)); }
+initDust(); newDrop();
+
+function dropShape(st,tilt){
+  // returns rear/front angles, half-widths (px), apex height
+  let u;
+  if(st.pinned) u=Math.sin(tilt*D2R)/Math.sin(45*D2R);
+  else u=st.alphaC===Infinity?Math.sin(tilt*D2R)/Math.sin(45*D2R):Math.min(1,Math.sin(tilt*D2R)/Math.max(1e-3,Math.sin(st.alphaC*D2R)));
+  u=clamp(u,0,1);
+  const thF=clamp(st.th+(st.thA-st.th)*u,4,178), thB=clamp(st.th-(st.th-st.thR)*u,4,178);
+  const h=st.geo.h*PMM;
+  const RL=h/(1-Math.cos(thB*D2R)), RR=h/(1-Math.cos(thF*D2R));
+  return {thF,thB,h,RL,RR,aL:RL*Math.sin(thB*D2R),aR:RR*Math.sin(thF*D2R),
+    extL:thB>90?RL:RL*Math.sin(thB*D2R), extR:thF>90?RR:RR*Math.sin(thF*D2R)};
+}
+function updateTaro(dt){
+  TS=taro(S.t.surf,S.t.gamma);
+  const al=S.t.tilt; drop.spawn=Math.min(1,drop.spawn+dt*1.8);
+  const sh=dropShape(TS,al);
+  const moving=!TS.pinned && al>TS.alphaC && drop.spawn>=1;
+  drop.moving=moving;
+  if(moving){ const v=Math.min(430,40+650*(Math.sin(al*D2R)-Math.sin(TS.alphaC*D2R))); drop.s+=v*dt; drop.roll+=v*dt/Math.max(20,sh.h*0.55); }
+  if(moving){
+    for(const p of dust){ if(p.gone||p.att!==null||p.tested===drop.id) continue;
+      if(p.x<=drop.s+sh.extR && p.x>=drop.s-sh.extL-4){ p.tested=drop.id; if(Math.random()<TS.pick){ p.att=drop.id; p.ang=Math.random()*TAU; p.cassie=(TS.state==='Cassie–Baxter'); } } }
+  }
+  if(drop.s-sh.extL>LEAF+6){
+    for(const p of dust){ if(p.att===drop.id && !p.gone){ p.gone=true; removed++; if(p.cassie) removedC++; } }
+    newDrop();
+  }
+}
+// water molecules for molecular panel
+const WM=[];
+for(let row=0;row<3;row++) for(let c=0;c<6;c++){ WM.push({bx:494+c*68+(row%2)*34, by:424+row*42, ph:Math.random()*TAU, phi:Math.random()*TAU, tgt:null, timer:Math.random()*1.5, x:0,y:0}); }
+const SURF_O=Array.from({length:11},(_,i)=>({x:470+i*41,y:568}));
+function updateWM(dt,glass,t){
+  for(const m of WM){ m.x=m.bx+5*Math.sin(t*1.3+m.ph); m.y=m.by+4*Math.sin(t*1.7+m.ph*1.3); }
+  for(const m of WM){
+    m.timer-=dt;
+    if(m.timer<=0){ m.timer=0.9+Math.random()*1.8;
+      const cand=WM.filter(o=>o!==m && Math.hypot(o.bx-m.bx,o.by-m.by)<82);
+      if(glass && m.by>500){ for(const s of SURF_O) if(Math.hypot(s.x-m.bx,s.y-m.by)<78) cand.push(s); }
+      m.tgt=cand.length?cand[(Math.random()*cand.length)|0]:null; }
+    if(m.tgt){ const ta=Math.atan2(m.tgt.y-m.y,m.tgt.x-m.x)+52.25*D2R; let d=((ta-m.phi+Math.PI)%TAU+TAU)%TAU-Math.PI; m.phi+=d*Math.min(1,dt*(RM?1.5:4)); }
+    else m.phi+=dt*0.6;
+  }
+}
+
+function drawTaro(t,dt){
+  const o=STG; if(!o.ok) return; const ctx=o.ctx;
+  ctx.setTransform(o.s,0,0,o.s,0,0); ctx.fillStyle=SC.bg; ctx.fillRect(0,0,900,600);
+  const st=TS, al=S.t.tilt, sh=dropShape(st,al), surf=S.t.surf;
+  // ---- macro view
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,900,382); ctx.clip();
+  const sky=ctx.createLinearGradient(0,0,0,382); sky.addColorStop(0,'#0E1A23'); sky.addColorStop(1,'#0A1117'); ctx.fillStyle=sky; ctx.fillRect(0,0,900,382);
+  const z=1-0.36*Math.sin(al*D2R)/Math.sin(45*D2R), PV={x:450,y:215};
+  const cA=Math.cos(al*D2R), sA=Math.sin(al*D2R);
+  const toW=(lx,ly)=>({x:PV.x+z*(lx*cA-ly*sA), y:PV.y+z*(lx*sA+ly*cA)});
+  // horizontal reference & tilt arc
+  ctx.setLineDash([4,5]); ctx.strokeStyle='rgba(200,220,235,0.25)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(PV.x,PV.y+z*30); ctx.lineTo(PV.x+250,PV.y+z*30); ctx.stroke(); ctx.setLineDash([]);
+  ctx.save(); ctx.translate(PV.x,PV.y); ctx.rotate(al*D2R); ctx.scale(z,z);
+  // leaf / substrate slab
+  let slab;
+  if(surf==='glass'){ slab=ctx.createLinearGradient(0,0,0,22); slab.addColorStop(0,'rgba(170,215,240,0.55)'); slab.addColorStop(1,'rgba(90,140,170,0.35)'); }
+  else if(surf==='smooth'){ slab=ctx.createLinearGradient(0,0,0,22); slab.addColorStop(0,'#7E9C76'); slab.addColorStop(1,'#3C5A3A'); }
+  else { slab=ctx.createLinearGradient(0,0,0,22); slab.addColorStop(0,'#3C9A5C'); slab.addColorStop(1,'#1B4D2F'); }
+  ctx.fillStyle=slab; rr(ctx,-LEAF,0,LEAF*2,22,6); ctx.fill();
+  if(surf==='cassie'||surf==='wenzel'){ ctx.fillStyle='rgba(225,245,225,0.55)'; for(let x=-LEAF+4;x<LEAF;x+=6){ ctx.beginPath(); ctx.arc(x,0.5,1.6,Math.PI,0); ctx.fill(); } ctx.strokeStyle='rgba(20,60,35,0.6)'; ctx.lineWidth=1; for(let x=-300;x<LEAF;x+=90){ctx.beginPath();ctx.moveTo(x,11);ctx.lineTo(x+60,20);ctx.stroke();} }
+  if(surf==='glass'){ ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-LEAF+6,3); ctx.lineTo(LEAF-6,3); ctx.stroke(); }
+  // dust on surface
+  for(const p of dust){ if(p.gone||p.att!==null) continue; ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,-p.r,p.r,0,TAU); ctx.fill(); }
+  // drop
+  const sp=drop.spawn, fall=(1-sp)*(1-sp)*260;
+  const s=drop.s, h=sh.h;
+  ctx.save(); ctx.globalAlpha=0.25+0.75*sp; ctx.translate(0,-fall);
+  ctx.beginPath();
+  ctx.moveTo(s-sh.aL,0);
+  ctx.arc(s,-h+sh.RL,sh.RL,-Math.PI/2-sh.thB*D2R,-Math.PI/2);
+  ctx.arc(s,-h+sh.RR,sh.RR,-Math.PI/2,-Math.PI/2+sh.thF*D2R);
+  ctx.closePath();
+  const wg=ctx.createLinearGradient(s-sh.extL,-h,s+sh.extR,0); wg.addColorStop(0,'rgba(140,205,255,0.55)'); wg.addColorStop(1,'rgba(40,120,210,0.45)');
+  ctx.fillStyle=wg; ctx.fill(); ctx.strokeStyle='rgba(200,235,255,0.9)'; ctx.lineWidth=1.6/z; ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(s-Math.min(sh.extL,h)*0.35,-h*0.72,Math.max(3,Math.min(sh.extL,h)*0.16),Math.max(2,h*0.09),-0.5,0,TAU); ctx.fill();
+  // attached dust riding on drop
+  const Rm=Math.max(8,(h<sh.extL? h*0.8 : sh.extL*0.85));
+  for(const p of dust){ if(p.att!==drop.id||p.gone) continue; const a=p.ang+drop.roll; ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(s+Math.cos(a)*Rm*0.8,-h/2+Math.sin(a)*Math.min(Rm,h/2)*0.8,p.r,0,TAU); ctx.fill(); }
+  ctx.restore();
+  // tangent constructions (only when drop settled)
+  if(sp>0.95){
+    const cps=[{x:s-sh.aL,dir:1,th:sh.thB},{x:s+sh.aR,dir:-1,th:sh.thF}];
+    for(const c of cps){
+      const tx=c.dir*Math.cos(c.th*D2R), ty=-Math.sin(c.th*D2R);
+      ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1.2/z; ctx.beginPath(); ctx.moveTo(c.x,0); ctx.lineTo(c.x+c.dir*52,0); ctx.stroke();
+      ctx.strokeStyle=SC.amber; ctx.lineWidth=2/z; ctx.beginPath(); ctx.moveTo(c.x-tx*14,-ty*-14*0); ctx.moveTo(c.x,0); ctx.lineTo(c.x+tx*72,ty*72); ctx.stroke();
+      ctx.lineWidth=1.4/z; ctx.beginPath(); if(c.dir===1) ctx.arc(c.x,0,24,-c.th*D2R,0); else ctx.arc(c.x,0,24,Math.PI,Math.PI+c.th*D2R); ctx.stroke();
+      ctx.fillStyle=SC.white; ctx.beginPath(); ctx.arc(c.x,0,3/z,0,TAU); ctx.fill();
+      if(st.pinned){ ctx.fillStyle=SC.coral; ctx.beginPath(); ctx.moveTo(c.x,2); ctx.lineTo(c.x-5,12); ctx.lineTo(c.x+5,12); ctx.closePath(); ctx.fill(); }
+    }
+  }
+  ctx.restore();
+  // world-space labels
+  if(sp>0.95){
+    const tilted=al>0.4;
+    const L=toW(s-sh.aL,0), Rr=toW(s+sh.aR,0);
+    const tB=toW(s-sh.aL+Math.cos(sh.thB*D2R)*88,-Math.sin(sh.thB*D2R)*88), tF=toW(s+sh.aR-Math.cos(sh.thF*D2R)*88,-Math.sin(sh.thF*D2R)*88);
+    label(ctx,(tilted?'θR = ':'θc = ')+Math.round(sh.thB)+'°',Math.max(100,tB.x-6),tB.y-10,{font:'600 13px '+MONO,col:SC.amber,bg:'rgba(10,17,23,0.8)',align:'right'});
+    label(ctx,(tilted?'θA = ':'θc = ')+Math.round(sh.thF)+'°',tF.x+6,tF.y-10,{font:'600 13px '+MONO,col:SC.amber,bg:'rgba(10,17,23,0.8)'});
+    const pr=toW(s+sh.aR+60,22);
+    label(ctx,'titik kontak tiga fase',pr.x,pr.y+14,{font:'10.5px '+MONO,col:SC.mute});
+    label(ctx,'padat · cair · gas',pr.x,pr.y+28,{font:'10.5px '+MONO,col:SC.mute});
+    const ap=toW(s,-h-26); label(ctx,'gas (udara)',ap.x,ap.y,{font:'10.5px '+MONO,col:SC.mute,align:'center'});
+  }
+  label(ctx,`α = ${fmt(al,1)}°`,PV.x+120,PV.y+z*30+16,{font:'600 12px '+MONO,col:SC.text});
+  // status overlay
+  ctx.fillStyle='rgba(10,17,23,0.85)'; rr(ctx,12,12,300,70,8); ctx.fill(); ctx.strokeStyle=SC.line; ctx.lineWidth=1; ctx.stroke();
+  const stc=st.state.startsWith('Cassie')?SC.teal:st.pinned?SC.coral:st.state.startsWith('Hidro')?SC.blue:SC.violet;
+  label(ctx,st.state,24,30,{font:'600 14px '+MONO,col:stc});
+  label(ctx,`θc = ${fmt(st.th,1)}°   γLV = ${fmt(S.t.gamma,1)} mN/m`,24,52,{font:'12px '+MONO,col:SC.text});
+  const mv=st.pinned?'tetes terkunci (pinning)':drop.moving?(st.state.startsWith('Cassie')?'tetes menggelinding':'tetes meluncur'):`diam · luncur pada α > ${fmt(st.alphaC,1)}°`;
+  label(ctx,mv,24,70,{font:'11.5px '+MONO,col:drop.moving?SC.green:SC.mute});
+  const cl=Math.round(removedC/DUSTN*100), all=Math.round(removed/DUSTN*100);
+  ctx.fillStyle='rgba(10,17,23,0.85)'; rr(ctx,640,12,248,52,8); ctx.fill(); ctx.strokeStyle=SC.line; ctx.stroke();
+  label(ctx,`debu tersapu: ${all}%`,652,30,{font:'600 13px '+MONO,col:SC.white});
+  ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.fillRect(652,44,224,6); ctx.fillStyle=SC.teal; ctx.fillRect(652,44,224*cl/100,6); ctx.fillStyle='rgba(180,156,255,0.8)'; ctx.fillRect(652+224*cl/100,44,224*(all-cl)/100,6);
+  ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.fillRect(652+224*0.8,41,1.5,12);
+  label(ctx,'Makro · tetes 10 µL',12,370,{font:'10.5px '+MONO,col:SC.mute});
+  ctx.restore();
+
+  drawMicro(ctx,st);
+  updateWM(dt,surf==='glass',t);
+  drawMolecular(ctx,st,t);
+}
+
+function drawMicro(ctx,st){
+  const X0=0,Y0=392,W=446,H=204; const surf=S.t.surf;
+  ctx.save(); ctx.fillStyle=SC.panel; rr(ctx,X0,Y0,W,H,10); ctx.fill(); ctx.clip();
+  const yb=Y0+H-14, wtop=Y0+30;
+  const water='rgba(70,150,240,0.42)';
+  const rough=surf==='cassie'||surf==='wenzel';
+  const filled=surf==='wenzel'||st.collapsed;
+  if(rough){
+    const ph=74, pw=52, gap=78, xs=[]; for(let x=X0+26;x<X0+W;x+=gap) xs.push(x);
+    const tipY=yb-ph*0.94;
+    if(filled){ ctx.fillStyle=water; ctx.fillRect(X0,wtop,W,yb-wtop); }
+    else{
+      const sag=4+clamp(110-st.thY,0,20)*1.3;
+      ctx.beginPath(); ctx.moveTo(X0,wtop); ctx.lineTo(X0+W,wtop); ctx.lineTo(X0+W,tipY);
+      for(let i=xs.length-1;i>=0;i--){ const xm=xs[i]+pw/2; ctx.lineTo(xm,tipY); if(i>0){ const xp=xs[i-1]+pw/2; ctx.quadraticCurveTo((xm+xp)/2,tipY+sag*2,xp,tipY);} }
+      ctx.lineTo(X0,tipY); ctx.closePath(); ctx.fillStyle=water; ctx.fill();
+      ctx.strokeStyle='rgba(180,220,255,0.8)'; ctx.lineWidth=1.2; ctx.beginPath();
+      for(let i=0;i<xs.length-1;i++){ const xm=xs[i]+pw/2, xn=xs[i+1]+pw/2; ctx.moveTo(xm,tipY); ctx.quadraticCurveTo((xm+xn)/2,tipY+sag*2,xn,tipY);} ctx.stroke();
+      label(ctx,'udara terperangkap',xs[1]+pw/2+gap/2,yb-22,{font:'10px '+MONO,col:'#C8D9E6',align:'center'});
+    }
+    for(const x of xs){
+      ctx.beginPath(); ctx.moveTo(x,yb); ctx.bezierCurveTo(x,yb-ph*1.25,x+pw,yb-ph*1.25,x+pw,yb); ctx.closePath();
+      const pg=ctx.createLinearGradient(0,yb-ph,0,yb); pg.addColorStop(0,'#4FAE6E'); pg.addColorStop(1,'#245C39'); ctx.fillStyle=pg; ctx.fill();
+      ctx.strokeStyle='rgba(235,245,230,0.85)'; ctx.lineWidth=1.3;
+      for(let k=0;k<=14;k++){ const u=k/14, iu=1-u;
+        const bx=iu*iu*iu*x+3*iu*iu*u*x+3*iu*u*u*(x+pw)+u*u*u*(x+pw);
+        const by=iu*iu*iu*yb+3*iu*iu*u*(yb-ph*1.25)+3*iu*u*u*(yb-ph*1.25)+u*u*u*yb;
+        const dx=3*iu*iu*0+6*iu*u*pw+3*u*u*0, dy=3*iu*iu*(-ph*1.25)+3*u*u*(ph*1.25);
+        const m=Math.hypot(dx,dy)||1, nx=dy/m, ny=-dx/m;
+        ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+nx*6,by+ny*6); ctx.stroke(); }
+    }
+    ctx.fillStyle='#1C4A2E'; ctx.fillRect(X0,yb,W,14);
+    label(ctx,'papila + kristal lilin epikutikula',X0+W-10,Y0+16,{font:'10.5px '+MONO,col:SC.mute,align:'right'});
+    if(filled) label(ctx,'air mengisi celah → pinning',X0+10,tipY-12,{font:'600 11px '+MONO,col:'#FFB0A8'});
+    else label(ctx,`fraksi padat f = 0,12`,X0+10,tipY-14,{font:'600 11px '+MONO,col:'#9FE7E2'});
+  } else {
+    const ly=yb-18;
+    ctx.fillStyle=water; ctx.fillRect(X0,wtop,W,ly-wtop);
+    if(surf==='smooth'){ const g=ctx.createLinearGradient(0,ly,0,yb+14); g.addColorStop(0,'#86A27D'); g.addColorStop(1,'#2E4A2E'); ctx.fillStyle=g; ctx.fillRect(X0,ly,W,yb+14-ly); label(ctx,'lapisan lilin rata (tanpa kekasaran)',X0+W-10,Y0+16,{font:'10.5px '+MONO,col:SC.mute,align:'right'}); }
+    else { const g=ctx.createLinearGradient(0,ly,0,yb+14); g.addColorStop(0,'rgba(170,215,240,0.7)'); g.addColorStop(1,'rgba(70,110,140,0.6)'); ctx.fillStyle=g; ctx.fillRect(X0,ly,W,yb+14-ly); label(ctx,'kaca SiO₂ (gugus Si–OH)',X0+W-10,Y0+16,{font:'10.5px '+MONO,col:SC.mute,align:'right'}); }
+  }
+  label(ctx,'MIKRO · penampang antarmuka',X0+10,Y0+16,{font:'600 11px '+MONO,col:SC.mute});
+  ctx.strokeStyle=SC.text; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(X0+W-70,yb-8); ctx.lineTo(X0+W-18,yb-8); ctx.stroke();
+  label(ctx,'10 µm',X0+W-44,yb-18,{font:'10px '+MONO,col:SC.text,align:'center'});
+  ctx.restore();
+}
+
+function drawH2O(ctx,m,hi){
+  const a1=m.phi-52.25*D2R, a2=m.phi+52.25*D2R, L=13;
+  m.h1={x:m.x+Math.cos(a1)*L,y:m.y+Math.sin(a1)*L}; m.h2={x:m.x+Math.cos(a2)*L,y:m.y+Math.sin(a2)*L};
+  ctx.strokeStyle='rgba(235,240,245,0.7)'; ctx.lineWidth=2.4;
+  ctx.beginPath(); ctx.moveTo(m.x,m.y); ctx.lineTo(m.h1.x,m.h1.y); ctx.moveTo(m.x,m.y); ctx.lineTo(m.h2.x,m.h2.y); ctx.stroke();
+  ctx.fillStyle='#F1F4F6'; ctx.beginPath(); ctx.arc(m.h1.x,m.h1.y,4.6,0,TAU); ctx.arc(m.h2.x,m.h2.y,4.6,0,TAU); ctx.fill();
+  const g=ctx.createRadialGradient(m.x-2,m.y-2,1,m.x,m.y,9); g.addColorStop(0,'#FF9C8E'); g.addColorStop(1,'#D8433A'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(m.x,m.y,8.5,0,TAU); ctx.fill();
+  if(hi){ // dipole arrow (− → + convention: toward H side) + charges
+    const dx=Math.cos(m.phi), dy=Math.sin(m.phi);
+    arrow(ctx,m.x-dx*16,m.y-dy*16,m.x+dx*22,m.y+dy*22,'rgba(255,214,102,0.9)',1.4,5);
+    label(ctx,'δ−',m.x-dx*20-6,m.y-dy*20,{font:'600 11px '+SANS,col:'#FFB4AA',align:'center'});
+    label(ctx,'δ+',m.x+dx*30,m.y+dy*30,{font:'600 11px '+SANS,col:'#FFFFFF',align:'center'});
+  }
+}
+function drawMolecular(ctx,st,t){
+  const X0=454,Y0=392,W=446,H=204, surf=S.t.surf, glass=surf==='glass';
+  ctx.save(); ctx.fillStyle=SC.panel; rr(ctx,X0,Y0,W,H,10); ctx.fill(); ctx.clip();
+  // surface
+  if(glass){
+    ctx.fillStyle='rgba(120,170,200,0.25)'; ctx.fillRect(X0,576,W,20);
+    for(const s of SURF_O){ ctx.strokeStyle='rgba(235,240,245,0.7)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(s.x+6,s.y-12); ctx.stroke();
+      ctx.fillStyle='#C9A56A'; ctx.beginPath(); ctx.arc(s.x,s.y+16,7,0,TAU); ctx.fill();
+      ctx.fillStyle='#D8433A'; ctx.beginPath(); ctx.arc(s.x,s.y,7.5,0,TAU); ctx.fill();
+      ctx.fillStyle='#F1F4F6'; ctx.beginPath(); ctx.arc(s.x+6,s.y-12,4.2,0,TAU); ctx.fill(); s.hx=s.x+6; s.hy=s.y-12; }
+  } else {
+    ctx.fillStyle='rgba(120,160,110,0.22)'; ctx.fillRect(X0,570,W,26);
+    for(let x=X0+10;x<X0+W;x+=22){ const y=574+((x/22)%2?4:0); ctx.fillStyle='#8C979F'; ctx.beginPath(); ctx.arc(x,y,7,0,TAU); ctx.fill();
+      ctx.fillStyle='#DDE3E7'; ctx.beginPath(); ctx.arc(x-5,y-7,3.2,0,TAU); ctx.arc(x+5,y-7,3.2,0,TAU); ctx.fill(); }
+  }
+  // surfactant
+  const ns=Math.round((72-S.t.gamma)/52*5);
+  const slots=[478,612,746,546,680];
+  for(let i=0;i<ns;i++){
+    const x=slots[i]; ctx.strokeStyle='#9AA6AF'; ctx.lineWidth=3; ctx.beginPath();
+    const y0=glass?548:562, y1=glass?452:470;
+    for(let k=0;k<=8;k++){ const y=y0+(y1-y0)*k/8, xx=x+(k%2?6:-6); k?ctx.lineTo(xx,y):ctx.moveTo(xx,y); } ctx.stroke();
+    const hy=glass?y0+6:y1-6; ctx.fillStyle='#F0A93B'; ctx.beginPath(); ctx.arc(x,glass?y0+2:y1-4,8,0,TAU); ctx.fill();
+    label(ctx,'−',x,glass?y0+2:y1-4,{font:'700 12px '+SANS,col:'#1A1206',align:'center'}); void hy;
+  }
+  // molecules + H-bonds
+  for(let i=0;i<WM.length;i++) drawH2O(ctx,WM[i],i===7||i===14);
+  ctx.setLineDash([3,3]); ctx.strokeStyle='rgba(92,184,255,0.85)'; ctx.lineWidth=1.4;
+  let surfB=0;
+  const acc=WM.slice(); const accS=glass?SURF_O:[];
+  for(const m of WM){ for(const H of [m.h1,m.h2]){ const vx=H.x-m.x, vy=H.y-m.y;
+      for(const o of acc.concat(accS)){ if(o===m) continue; const ox=o.x-m.x, oy=o.y-m.y, d=Math.hypot(ox,oy); if(d>80||d<10) continue;
+        const cs=(vx*ox+vy*oy)/(13*d); if(cs>Math.cos(22*D2R)){ ctx.beginPath(); ctx.moveTo(H.x,H.y); ctx.lineTo(o.x-ox/d*9,o.y-oy/d*9); ctx.stroke(); if(accS.includes(o)) surfB++; break; } } } }
+  if(glass){ for(const s of SURF_O){ let best=null,bd=60; for(const m of WM){ const d=Math.hypot(m.x-s.hx,m.y-s.hy); if(d<bd){bd=d;best=m;} } if(best){ ctx.beginPath(); ctx.moveTo(s.hx,s.hy); ctx.lineTo(best.x,best.y+8); ctx.stroke(); surfB++; } } }
+  ctx.setLineDash([]);
+  label(ctx,'MOLEKUL · H₂O di antarmuka',X0+10,Y0+16,{font:'600 11px '+MONO,col:SC.mute});
+  label(ctx,glass?`ikatan H air–Si–OH: ${surfB}`:`ikatan H air–lilin: 0 (tanpa gugus polar)`,X0+W-10,Y0+16,{font:'600 11px '+MONO,col:glass?SC.blue:SC.coral,align:'right'});
+  label(ctx,'- - ikatan hidrogen',X0+10,Y0+34,{font:'10px '+MONO,col:SC.blue});
+  if(ns>0) label(ctx,`surfaktan teradsorpsi: ${ns}`,X0+W-10,Y0+34,{font:'10px '+MONO,col:SC.amber,align:'right'});
+  ctx.restore();
+}
+
+function drawGraphTaro(){
+  const o=GR; if(!o.ok) return; const ctx=o.ctx;
+  ctx.setTransform(o.s,0,0,o.s,0,0); ctx.fillStyle=SC.bg; ctx.fillRect(0,0,440,380);
+  const x0=50,x1=426,y0=22,y1=340, gx=g=>x0+(g-20)/52*(x1-x0), ty=th=>y1-th/180*(y1-y0);
+  ctx.fillStyle='rgba(63,208,201,0.07)'; ctx.fillRect(x0,ty(180),x1-x0,ty(150)-ty(180));
+  ctx.fillStyle='rgba(92,184,255,0.06)'; ctx.fillRect(x0,ty(90),x1-x0,ty(0)-ty(90));
+  for(const v of [0,30,60,90,120,150,180]){ const y=ty(v); ctx.strokeStyle=v===90||v===150?'rgba(200,220,235,0.35)':SC.grid; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke(); label(ctx,v+'°',x0-6,y,{font:'10px '+MONO,col:SC.mute,align:'right'}); }
+  for(const g of [20,30,40,50,60,72]){ const x=gx(g); ctx.strokeStyle=SC.grid; ctx.beginPath(); ctx.moveTo(x,y0); ctx.lineTo(x,y1); ctx.stroke(); label(ctx,String(g),x,354,{font:'10px '+MONO,col:SC.mute,align:'center'}); }
+  label(ctx,'γLV (mN/m)',x1,370,{font:'10px '+MONO,col:SC.mute,align:'right'});
+  label(ctx,'superhidrofobik',x0+6,ty(165),{font:'10px '+MONO,col:'#8FE6E1'});
+  label(ctx,'hidrofilik θ < 90°',x0+6,ty(80),{font:'10px '+MONO,col:'#9CCBF0'});
+  const curves=[['cassie',SC.teal],['wenzel',SC.amber],['smooth',SC.violet],['glass',SC.blue]];
+  for(const [sf,col] of curves){ const act=sf===S.t.surf; ctx.strokeStyle=col; ctx.globalAlpha=act?1:0.35; ctx.lineWidth=act?2.4:1.4; ctx.beginPath(); let prev=null;
+    for(let g=20;g<=72.001;g+=0.25){ const th=taro(sf,g).th, x=gx(g), y=ty(th); if(prev!==null && Math.abs(prev-th)>25){ ctx.stroke(); ctx.setLineDash([2,3]); ctx.beginPath(); ctx.moveTo(x,ty(prev)); ctx.lineTo(x,y); ctx.stroke(); ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(x,y);} else if(prev===null) ctx.moveTo(x,y); else ctx.lineTo(x,y); prev=th; }
+    ctx.stroke(); ctx.globalAlpha=1; }
+  const x=gx(S.t.gamma), y=ty(TS.th);
+  ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(x,y,10,0,TAU); ctx.fill();
+  ctx.fillStyle=SC.white; ctx.beginPath(); ctx.arc(x,y,5,0,TAU); ctx.fill();
+  label(ctx,`θc = ${fmt(TS.th,1)}°`,clamp(x+10,x0,x1-90),y-14,{font:'600 11px '+MONO,col:SC.white,bg:'rgba(12,20,27,0.8)'});
+  label(ctx,'θc (°)',x0,10,{font:'600 11px '+MONO,col:SC.text});
+}
+
+/* =================================================================
+   UI wiring
+   ================================================================= */
+const rSl=$('#rSl'), thSl=$('#thSl'), gSl=$('#gSl'), aSl=$('#aSl');
+function syncInputs(){
+  rSl.value=S.g.r; thSl.value=S.g.theta; gSl.value=S.t.gamma; aSl.value=S.t.tilt;
+  $('#rOut').textContent=fmt(S.g.r,3)+' nm'; $('#thOut').textContent=Math.round(S.g.theta)+'°';
+  $('#gOut').textContent=fmt(S.t.gamma,1)+' mN/m'; $('#aOut').textContent=fmt(S.t.tilt,1)+'°';
+  for(const b of document.querySelectorAll('#subSeg button')) b.setAttribute('aria-pressed',String(b.dataset.sub===S.g.sub));
+  const rad=document.getElementById('surf_'+S.t.surf); if(rad) rad.checked=true;
+}
+rSl.addEventListener('input',()=>{S.g.r=+rSl.value; syncInputs();});
+thSl.addEventListener('input',()=>{S.g.theta=+thSl.value; syncInputs();});
+gSl.addEventListener('input',()=>{S.t.gamma=+gSl.value; syncInputs();});
+aSl.addEventListener('input',()=>{S.t.tilt=+aSl.value; syncInputs();});
+document.querySelectorAll('#subSeg button').forEach(b=>b.addEventListener('click',()=>{S.g.sub=b.dataset.sub; syncInputs();}));
+document.querySelectorAll('input[name=surf]').forEach(r=>r.addEventListener('change',()=>{S.t.surf=r.value; TS=taro(S.t.surf,S.t.gamma); newDrop();}));
+$('#dustBtn').addEventListener('click',()=>{initDust(); newDrop();});
+$('#dropBtn').addEventListener('click',()=>newDrop());
+// drag on nano view to set r
+let dragging=false;
+const cvs=$('#stage');
+function dragR(e){ const rect=cvs.getBoundingClientRect(); const x=(e.clientX-rect.left)/rect.width*900, y=(e.clientY-rect.top)/rect.height*600; return {x,r:clamp((NANO.YS-y)/NANO.PX,0.2,2)}; }
+cvs.addEventListener('pointerdown',e=>{ if(S.mode!=='gecko') return; const d=dragR(e); if(d.x<240) return; dragging=true; cvs.setPointerCapture(e.pointerId); S.g.r=Math.round(d.r/0.005)*0.005; syncInputs(); });
+cvs.addEventListener('pointermove',e=>{ if(!dragging) return; S.g.r=Math.round(dragR(e).r/0.005)*0.005; syncInputs(); });
+cvs.addEventListener('pointerup',()=>dragging=false); cvs.addEventListener('pointercancel',()=>dragging=false);
+
+const CAP={
+  gecko:'Kiri: hierarki kaki cicak (lamela → seta → spatula). Kanan: ujung spatula di atas substrat. Awan elektron berfluktuasi membentuk dipol sesaat δ+/δ−; makin dekat, dipol substrat makin terkorelasi (terinduksi) sehingga muncul gaya dispersi London. Panah biru-hijau = tarik, merah = tolak Pauli. Seret area nano ke atas/bawah untuk mengubah r.',
+  taro:'Atas: tetes air 10 µL dengan garis singgung pada titik kontak tiga fase. Kiri bawah: penampang papila berlapis kristal lilin (udara terperangkap = Cassie–Baxter). Kanan bawah: molekul H₂O dengan dipol permanen dan jaringan ikatan hidrogen; di atas lilin nonpolar tidak ada ikatan H ke permukaan.'
+};
+function setMode(m){
+  S.mode=m;
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.mode===m)));
+  $('#lab').hidden=m==='quiz'; $('#quiz').hidden=m!=='quiz';
+  $('#ctlGecko').hidden=m!=='gecko'; $('#ctlTaro').hidden=m!=='taro';
+  if(m==='gecko'){ $('#stageTitle').textContent='Gaya van der Waals pada spatula cicak'; $('#stageSub').textContent='skala: mm → µm → nm';
+    $('#graphTitle').textContent='Potensial & gaya Lennard-Jones'; $('#graphSub').textContent='r₀ = 2^(1/6)·σ ≈ 0,35 nm';
+    $('#graphLegend').innerHTML='<span><i style="background:#5CB8FF"></i>V(r) substrat aktif</span><span><i style="background:#F0A93B"></i>F(r) substrat aktif</span><span><i style="background:repeating-linear-gradient(90deg,#9aa 0 4px,transparent 4px 8px)"></i>substrat lain</span><span>● posisi spatula</span>'; }
+  if(m==='taro'){ $('#stageTitle').textContent='Keterbasahan permukaan daun talas'; $('#stageSub').textContent='skala: mm · µm · Å';
+    $('#graphTitle').textContent='Sudut kontak terhadap γLV'; $('#graphSub').textContent='efek surfaktan';
+    $('#graphLegend').innerHTML='<span><i style="background:#3FD0C9"></i>Cassie–Baxter</span><span><i style="background:#F0A93B"></i>Wenzel</span><span><i style="background:#B49CFF"></i>Lilin halus</span><span><i style="background:#5CB8FF"></i>Kaca</span>'; }
+  if(CAP[m]) $('#stageCap').textContent=CAP[m];
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setMode(t.dataset.mode)));
+
+function setText(id,v){ const el=document.getElementById(id); if(el.innerHTML!==v) el.innerHTML=v; }
+function readGecko(){
+  const G=gecko(S.g.r,S.g.theta,S.g.sub);
+  setText('ro_r',fmt(S.g.r,3)+' <small>nm</small>'); setText('ro_zone',G.zone);
+  setText('ro_V',fmt(G.V,2)+' <small>meV</small>'); setText('ro_F',fmt(G.F,2)+' <small>pN</small>');
+  setText('ro_E',(G.Ead<-9999?'< −9999':fmt(G.Ead,2))+' <small>mJ/m²</small>');
+  setText('ro_Ft',fmt(G.Fseta,2)+' <small>µN</small>');
+  setText('ro_Fall',fmt(G.Fseta*6.5,1)+' <small>N (6,5 juta seta)</small>');
+  setText('ro_status',`<span class="chip ${G.status.c}">${G.status.t}</span>`);
+  const sb=SUBS[S.g.sub], tot=sb.Ad+sb.Ap, pl=sb.Ad/tot*100;
+  $('#compL').style.width=pl+'%'; $('#compP').style.width=(100-pl)+'%';
+  setText('compOut',`London ${fmt(pl,0)}% · dipol ${fmt(100-pl,0)}%`);
+}
+function readTaro(){
+  const st=TS;
+  setText('ro_th',fmt(st.th,1)+'°'); setText('ro_state',st.state);
+  setText('ro_thAR',fmt(st.thA,0)+'° / '+fmt(st.thR,0)+'°'); setText('ro_hys',fmt(st.thA-st.thR,1)+'°');
+  setText('ro_alpha',st.alphaC===Infinity?'terkunci <small>(> 90°)</small>':fmt(st.alphaC,1)+'°');
+  setText('ro_thY',fmt(st.thY,1)+'° <small>cos = '+fmt(st.cW,2)+'</small>');
+  setText('ro_clean',`${Math.round(removedC/DUSTN*100)}% <small>· total ${Math.round(removed/DUSTN*100)}% dari ${DUSTN} partikel</small>`);
+}
+
+/* ---------------- challenges ---------------- */
+const CH=[
+  {mode:'gecko',tag:'T1 · Mode Cicak',title:'Titik kesetimbangan',
+   task:'Atur jarak spatula ke dinding hingga mencapai energi potensial minimum (gaya total = 0, zona kesetimbangan stabil).',
+   exp:'<b>Tercapai.</b> Pada r₀ = 2^(1/6)·σ ≈ 0,35 nm, dV/dr = 0: tarikan dispersi (∝ −1/r⁶) tepat diimbangi tolakan Pauli (∝ +1/r¹²) dan V = −ε. Pita 0,35–0,40 nm adalah dasar sumur potensial: geser sedikit ke dalam muncul gaya pemulih tolak, ke luar muncul gaya tarik yang menarik spatula kembali. Inilah jarak kontak efektif ribuan spatulae.',
+   setup(){ setMode('gecko'); },
+   check(){ return S.mode==='gecko' && S.g.r>=0.35 && S.g.r<=0.40; },
+   live(){ const r=S.g.r, G=gecko(r,S.g.theta,S.g.sub); return `r = ${fmt(r,3)} nm · F = ${fmt(G.F,2)} pN → `+(r<0.35?'terlalu dekat, tolakan Pauli':r>0.40?'terlalu jauh, perkecil r':'di dasar sumur'); }},
+  {mode:'gecko',tag:'T2 · Mode Cicak',title:'Mekanisme pelepasan',
+   task:'Cicak menempel kuat pada sudut 10°. Ubah sudut tarikan θ hingga gaya adhesi turun di bawah ambang lepas agar cicak bisa melangkah.',
+   exp:'<b>Tercapai.</b> Pada θ kecil beban terbagi merata ke seluruh kontak (mode geser), jadi semua spatulae menahan bersama. Di atas ~30°, tegangan terpusat di tepi kontak dan retak merambat (peeling; model Kendall F/b = W/(1 − cos θ)). Spatulae lepas berurutan dengan gaya kecil. Cicak memanfaatkan ini dengan menggulung jari (hiperekstensi digital) sehingga bisa melangkah ±15 kali per detik.',
+   setup(){ S.g.r=0.36; S.g.theta=10; syncInputs(); setMode('gecko'); },
+   check(){ return S.mode==='gecko' && S.g.theta>30; },
+   live(){ const G=gecko(S.g.r,S.g.theta,S.g.sub); return `θ = ${Math.round(S.g.theta)}° · F = ${fmt(G.Fseta,2)} µN · ambang lepas ${fmt(G.Fth,2)} µN`; }},
+  {mode:'taro',tag:'T3 · Mode Daun Talas',title:'Efek surfaktan',
+   task:'Ubah air murni di atas daun talas Cassie–Baxter agar kehilangan sifat superhidrofobiknya (θc < 90°) dengan menambahkan surfaktan (menurunkan γLV).',
+   exp:'<b>Tercapai.</b> Surfaktan menurunkan γLV sehingga cos θY pada lilin naik. Saat θY < 90°, meniskus di antara papila tidak lagi tertahan: tekanan Laplace tak mampu menyangga udara, keadaan Cassie runtuh menjadi Wenzel, dan kekasaran justru memperkuat pembasahan (cos θW = r·cos θY, dengan r > 1).',
+   setup(){ S.t.surf='cassie'; S.t.gamma=72; syncInputs(); TS=taro('cassie',72); newDrop(); setMode('taro'); },
+   check(){ return S.mode==='taro' && S.t.surf==='cassie' && TS.th<90; },
+   live(){ if(S.t.surf!=='cassie') return 'Pilih permukaan Superhidrofobik (Cassie–Baxter) dulu'; return `γLV = ${fmt(S.t.gamma,1)} mN/m · θc = ${fmt(TS.th,1)}° · θY = ${fmt(TS.thY,1)}°`; }},
+  {mode:'taro',tag:'T4 · Mode Daun Talas',title:'Self-cleaning',
+   task:'Bersihkan minimal 80% partikel debu di permukaan daun dengan mengatur sudut kemiringan yang tepat tanpa membuat tetesan terjebak (keadaan Wenzel).',
+   exp:'<b>Tercapai.</b> Pada keadaan Cassie fraksi kontak padat hanya f ≈ 12%, histeresis kecil, sehingga tetesan menggelinding pada kemiringan beberapa derajat saja. Debu lebih kuat terikat pada antarmuka air–udara daripada pada ujung kristal lilin, jadi terangkat dan terbawa tetesan (efek lotus). Pada Wenzel, garis kontak terpaku dan tetesan tidak bergerak.',
+   setup(){ S.t.surf='cassie'; S.t.gamma=72; S.t.tilt=0; syncInputs(); TS=taro('cassie',72); initDust(); newDrop(); setMode('taro'); },
+   check(){ return S.mode==='taro' && removedC/DUSTN>=0.8 && TS.state==='Cassie–Baxter'; },
+   live(){ const p=Math.round(removedC/DUSTN*100); if(TS.pinned) return `Tetes terjebak (${TS.state}) · bersih ${p}%`; return `α = ${fmt(S.t.tilt,1)}° · α* = ${fmt(TS.alphaC,1)}° · bersih oleh Cassie ${p}% / 80%`; }}
+];
+const CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+const chGrid=$('#chGrid');
+CH.forEach((c,i)=>{
+  const el=document.createElement('article'); el.className='card ch'; el.id='ch'+i;
+  el.innerHTML=`<div class="ch-top"><span class="tag ${c.mode}">${c.tag}</span><span class="check" aria-hidden="true">${CHECK}</span></div>
+  <h3>${c.title}</h3><p>${c.task}</p><div class="live" id="live${i}">—</div><div class="exp">${c.exp}</div>
+  <button class="btn" type="button" id="chbtn${i}">${i===1?'Siapkan kondisi 10°':i===3?'Siapkan daun berdebu':'Kerjakan'}</button>`;
+  chGrid.appendChild(el);
+  el.querySelector('button').addEventListener('click',()=>{ c.setup(); window.scrollTo({top:0,behavior:RM?'auto':'smooth'}); });
+});
+function renderProgress(){
+  const n=S.ch.filter(Boolean).length; $('#progN').textContent=n+'/4';
+  document.querySelectorAll('#segs span').forEach((s,i)=>s.classList.toggle('on',!!S.ch[i]));
+  CH.forEach((c,i)=>{ document.getElementById('ch'+i).classList.toggle('done',!!S.ch[i]); });
+  const q=S.quiz.filter((a,i)=>a!==null && QUIZ[i].opts[a].ok).length, qa=S.quiz.filter(a=>a!==null).length;
+  $('#quizN').textContent=q+'/3'+(qa<3?'':' ✓');
+}
+let toastT=0;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),3200); }
+let liveTick=0;
+function checkChallenges(){
+  CH.forEach((c,i)=>{ if(!S.ch[i] && c.check()){ S.ch[i]=true; save(); renderProgress(); toast(`✓ Tantangan ${i+1} selesai: ${c.title}`); } });
+  if(++liveTick%6===0) CH.forEach((c,i)=>setText('live'+i,S.ch[i]?'✓ Terverifikasi · '+c.live():c.live()));
+}
+let armed=0;
+$('#resetAll').addEventListener('click',e=>{ const b=e.currentTarget; if(!armed){ b.textContent='Klik lagi untuk mereset'; b.classList.add('arm'); armed=setTimeout(()=>{armed=0;b.textContent='Reset progres';b.classList.remove('arm');},3000); return; }
+  clearTimeout(armed); armed=0; b.textContent='Reset progres'; b.classList.remove('arm');
+  S.ch=[false,false,false,false]; S.quiz=[null,null,null]; save(); renderQuiz(); renderProgress(); toast('Progres direset'); });
+
+/* ---------------- quiz ---------------- */
+const QUIZ=[
+ {q:'Energi satu ikatan hidrogen O–H···O pada air ≈ 20 kJ/mol, sedangkan interaksi dispersi London antara sepasang atom hanya ≈ 1–4 kJ/mol. Mengapa cicak tetap mampu menahan berat tubuhnya hanya dengan gaya dispersi?',
+  opts:[
+   {t:'Spatulae membentuk ikatan kovalen sementara dengan permukaan.',ok:false,why:'Tidak ada pemakaian elektron bersama. Adhesi cicak reversibel dan dapat dilepas dalam milidetik, ciri interaksi nonkovalen.'},
+   {t:'Gaya dispersi bersifat aditif: miliaran spatulae (~10⁹ per individu) menyesuaikan kontur sehingga sangat banyak pasangan atom berada dekat r₀ secara bersamaan.',ok:true,why:'Setiap kontak memang lemah, tetapi hierarki lamela → seta → spatula memaksimalkan luas kontak nyata pada jarak 0,3–0,4 nm. Penjumlahan jutaan kontak membuat gaya total mencapai puluhan newton (lihat pembacaan "Ekstrapolasi 4 kaki").'},
+   {t:'Kaki cicak mengeluarkan cairan perekat yang membentuk jembatan kapiler.',ok:false,why:'Setae tidak memiliki kelenjar perekat. Kelembapan sedikit menambah adhesi, tetapi cicak tetap menempel pada permukaan hidrofobik kering, jadi kapilaritas bukan mekanisme utama.'},
+   {t:'Lamela bekerja seperti mangkuk hisap yang menciptakan vakum.',ok:false,why:'Seta tunggal tetap menempel di dalam vakum, dan tekanan atmosfer pada luas kaki cicak terlalu kecil untuk menjelaskan gaya yang terukur.'}]},
+ {q:'Cicak masih dapat menempel, walau lebih lemah, pada PTFE (Teflon): permukaan nonpolar dengan energi permukaan sangat rendah (≈ 18 mN/m). Penjelasan yang paling tepat adalah …',
+  opts:[
+   {t:'Ikatan C–F sangat polar sehingga PTFE menarik keratin melalui gaya dipol–dipol (Keesom).',ok:false,why:'Ikatan C–F memang polar, tetapi dipol-dipolnya saling meniadakan karena simetri rantai heliks PTFE. Kontribusi Keesom hampir nol.'},
+   {t:'Gaya dispersi London berasal dari fluktuasi awan elektron sesaat yang dimiliki semua atom, sehingga tidak memerlukan dipol permanen; hanya saja polarisabilitas fluorin rendah sehingga konstanta Hamaker dan adhesinya lebih kecil.',ok:true,why:'Dipol sesaat muncul di setiap atom dan menginduksi dipol pada atom tetangga, terlepas dari polaritas. Di simulasi, ganti substrat ke PTFE: kurva V(r) tetap memiliki sumur, hanya lebih dangkal (ε ≈ 6,6 meV vs 10 meV).'},
+   {t:'Terbentuk ikatan hidrogen antara gugus N–H keratin dan atom F.',ok:false,why:'F pada ikatan C–F adalah akseptor ikatan hidrogen yang sangat lemah, dan PTFE tidak punya donor. Kontribusinya dapat diabaikan.'},
+   {t:'Gaya berat ditahan oleh gesekan murni tanpa adhesi.',ok:false,why:'Gesekan setae justru bergantung pada adhesi (frictional adhesion). Tanpa gaya normal dari van der Waals, tidak ada gaya gesek yang menahan cicak di dinding vertikal.'}]},
+ {q:'Tetes air pada daun talas (θc ≈ 157°) diberi surfaktan hingga berubah ke keadaan Wenzel. Mengapa tetesan tidak lagi menggelinding meskipun daun dimiringkan 45°?',
+  opts:[
+   {t:'Sudut kontak meningkat sehingga tetesan menjadi lebih bulat dan stabil.',ok:false,why:'Surfaktan justru menurunkan sudut kontak. Tetes bulat dengan histeresis kecil malah paling mudah menggelinding.'},
+   {t:'Cairan mengisi celah antar-papila sehingga garis kontak terpaku (pinning) di tepi kekasaran; histeresis θA − θR menjadi besar dan gaya retensi γLV·w·(cos θR − cos θA) melampaui m·g·sin α.',ok:true,why:'Pada keadaan Wenzel luas antarmuka padat–cair naik dengan faktor kekasaran r, garis kontak tersangkut pada tepi papila, dan gaya retensi (persamaan Furmidge) mengalahkan komponen gravitasi di sepanjang bidang miring.'},
+   {t:'Surfaktan menaikkan massa jenis air sehingga tetesan lebih berat.',ok:false,why:'Perubahan massa jenis oleh surfaktan sangat kecil. Lagi pula tetes yang lebih berat justru lebih mudah meluncur.'},
+   {t:'Tegangan permukaan yang lebih rendah memperkuat ikatan hidrogen antara air dan lilin.',ok:false,why:'Lilin epikutikula (alkana, ester panjang) tidak punya gugus donor/akseptor yang berarti. Pembasahan meningkat karena γLV turun, bukan karena ikatan H dengan lilin.'}]}
+];
+function renderQuiz(){
+  const list=$('#quizList'); list.innerHTML='';
+  QUIZ.forEach((Q,qi)=>{
+    const card=document.createElement('article'); card.className='card q';
+    const ans=S.quiz[qi];
+    card.innerHTML=`<div class="qn">Soal ${qi+1} dari 3</div><p class="qt">${Q.q}</p><div class="ops"></div>`;
+    const ops=card.querySelector('.ops');
+    Q.opts.forEach((op,oi)=>{
+      const b=document.createElement('button'); b.type='button'; b.className='op'; b.id=`q${qi}o${oi}`;
+      b.innerHTML=`<span class="k">${'ABCD'[oi]}</span><span>${op.t}</span>`;
+      if(ans!==null){ b.disabled=true; if(op.ok) b.classList.add('right'); else if(oi===ans) b.classList.add('wrong'); }
+      b.addEventListener('click',()=>{ if(S.quiz[qi]!==null) return; S.quiz[qi]=oi; save(); renderQuiz(); renderProgress(); });
+      ops.appendChild(b);
+    });
+    if(ans!==null){
+      const ch=Q.opts[ans], right=Q.opts.find(o=>o.ok);
+      const fb=document.createElement('div'); fb.className='fb '+(ch.ok?'good':'bad');
+      fb.innerHTML=ch.ok?`<p><b>Benar.</b> ${ch.why}</p>`:`<p><b>Kurang tepat.</b> ${ch.why}</p><p><b>Jawaban benar (${'ABCD'[Q.opts.indexOf(right)]}):</b> ${right.why}</p>`;
+      card.appendChild(fb);
+    }
+    list.appendChild(card);
+  });
+  const answered=S.quiz.filter(a=>a!==null).length, score=S.quiz.filter((a,i)=>a!==null&&QUIZ[i].opts[a].ok).length;
+  $('#quizScore').textContent=`Skor: ${score}/3 · terjawab ${answered}/3`;
+  $('#quizFinal').hidden=answered<3;
+  if(answered===3){ $('#finalScore').textContent=`${score}/3 · ${Math.round(score/3*100)}%`;
+    $('#finalMsg').textContent=score===3?'Semua konsep dikuasai: aditivitas gaya dispersi, universalitas London, dan pinning pada keadaan Wenzel.':score===2?'Hampir sempurna. Baca pembahasan soal yang keliru, lalu cek ulang di simulasi.':'Ulangi eksplorasi di Mode 1 dan Mode 2, lalu coba lagi.'; }
+}
+$('#quizRetry').addEventListener('click',()=>{ S.quiz=[null,null,null]; save(); renderQuiz(); renderProgress(); });
+
+/* ---------------- loop ---------------- */
+let last=performance.now();
+function frame(ts){
+  const dt=Math.min(0.05,(ts-last)/1000); last=ts; const t=ts/1000;
+  if(S.mode==='gecko'){ rDisp+=(S.g.r-rDisp)*Math.min(1,dt*12); drawGecko(t); drawGraphGecko(); readGecko(); }
+  else if(S.mode==='taro'){ updateTaro(dt); drawTaro(t,dt); drawGraphTaro(); readTaro(); }
+  checkChallenges();
+  requestAnimationFrame(frame);
+}
+syncInputs(); setMode('gecko'); renderQuiz(); renderProgress();
+requestAnimationFrame(frame);
+})();
+</script>
